@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lead validation portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --page:#F4F5F0; --surface:#FFFFFF; --surface-muted:#ECEEE6; --border:#DEE1D6;
+    --ink:#151B2E; --ink-soft:#5B6472;
+    --accent:#0F8B8D; --accent-soft:#E3F2F1;
+    --valid:#2F7B4F; --valid-soft:#E5F2EA;
+    --invalid:#B23A2E; --invalid-soft:#FBE9E7;
+    --dup:#C17A22; --dup-soft:#FBF0DF;
+    --display:'Space Grotesk',sans-serif; --body:'Inter',sans-serif; --mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--body);}
+  h1,h2,h3{margin:0;font-family:var(--display);}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px;}
+  .header{border-bottom:1px solid var(--border);background:var(--surface);}
+  .header-inner{max-width:1080px;margin:0 auto;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .brand{display:flex;align-items:center;gap:8px;}
+  .brand-icon{width:30px;height:30px;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;}
+  .subtitle{color:var(--ink-soft);font-size:13px;margin:4px 0 0 40px;}
+  .tabs{display:flex;gap:8px;}
+  .tab-btn{font-family:var(--body);font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--ink-soft);cursor:pointer;}
+  .tab-btn.active{border-color:var(--ink);background:var(--ink);color:#fff;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;}
+  .grid-2{display:grid;grid-template-columns:1.1fr 0.9fr;gap:16px;}
+  @media (max-width:760px){.grid-2{grid-template-columns:1fr;}}
+  .section-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;}
+  .dropzone{border:1.5px dashed var(--border);border-radius:10px;padding:22px 16px;text-align:center;margin-top:12px;background:var(--surface-muted);cursor:pointer;}
+  .dropzone strong{display:block;font-size:13px;font-weight:600;}
+  .dropzone span{font-size:12px;color:var(--ink-soft);margin-top:4px;display:block;}
+  .divider{display:flex;align-items:center;gap:8px;margin:12px 0;}
+  .divider .line{flex:1;height:1px;background:var(--border);}
+  .divider span{font-size:11px;color:var(--ink-soft);font-family:var(--mono);}
+  input[type=text], textarea{font-family:var(--body);font-size:12.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);width:100%;}
+  textarea{font-family:var(--mono);resize:vertical;}
+  .row-flex{display:flex;gap:8px;}
+  .link-btn{margin-top:10px;font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600;padding:0;display:block;}
+  .filename{margin-top:12px;font-size:12px;font-family:var(--mono);color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
+  .error-box{margin-top:12px;font-size:12px;color:var(--invalid);background:var(--invalid-soft);padding:8px 10px;border-radius:8px;}
+  .btn-primary{font-size:13px;font-weight:600;padding:10px 14px;border-radius:8px;border:none;background:var(--ink);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;flex:1;}
+  .btn-primary:disabled{background:var(--border);color:var(--ink-soft);cursor:not-allowed;}
+  .btn-ghost{padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;}
+  .btn-fetch{font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;}
+  .stat-big{font-family:var(--display);font-weight:700;font-size:40px;line-height:1;}
+  .stat-label{font-size:12px;color:var(--ink-soft);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+  .mini-stats{display:flex;gap:24px;}
+  .mini-stat-label{font-size:11px;color:var(--ink-soft);font-weight:600;}
+  .mini-stat-value{font-family:var(--mono);font-size:18px;font-weight:600;}
+  .breakdown-bar{display:flex;height:14px;border-radius:999px;overflow:hidden;background:var(--surface-muted);margin-top:16px;}
+  .badge{font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;}
+  .source-bar-row{display:flex;align-items:center;gap:10px;margin:8px 0;}
+  .source-bar-label{width:90px;font-size:12px;flex-shrink:0;}
+  .source-bar-track{flex:1;height:16px;background:var(--surface-muted);border-radius:6px;overflow:hidden;position:relative;}
+  .source-bar-fill{height:100%;background:var(--valid);}
+  .source-bar-count{font-family:var(--mono);font-size:11px;color:var(--ink-soft);width:70px;text-align:right;flex-shrink:0;}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;}
+  .filter-btn{font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:var(--mono);}
+  .filter-btn.active{border-color:var(--ink);background:var(--ink);color:#fff;}
+  .search-wrap{position:relative;}
+  .search-wrap input{padding-left:28px;width:200px;}
+  .search-icon{position:absolute;left:9px;top:9px;color:var(--ink-soft);font-size:12px;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;padding:8px 12px;font-weight:600;color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border);background:var(--surface-muted);position:sticky;top:0;}
+  td{padding:8px 12px;border-bottom:1px solid var(--border);}
+  .table-wrap{max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;}
+  .mono{font-family:var(--mono);}
+  .muted{color:var(--ink-soft);}
+  .download-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+  .btn-download{font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--ink);cursor:pointer;}
+  .btn-download.primary{border-color:var(--ink);background:var(--ink);color:#fff;}
+  .banner{font-size:12.5px;color:var(--ink-soft);background:var(--accent-soft);border:1px solid var(--border);border-radius:10px;padding:10px 14px;}
+  .metric-grid{display:grid;gap:12px;}
+  .metric-card{padding:14px 16px;}
+  .metric-value{font-family:var(--display);font-weight:700;font-size:24px;margin-top:4px;}
+  .progress{height:8px;border-radius:999px;background:var(--surface-muted);margin-top:10px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--accent);}
+  .rank-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
+  .rank-row:last-child{border-bottom:none;}
+  .rank-num{font-family:var(--mono);color:var(--ink-soft);width:20px;display:inline-block;}
+  .flex{display:flex;} .flex-col{flex-direction:column;} .gap-5{gap:20px;}
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="brand">
+        <div class="brand-icon">&#10022;</div>
+        <h1 style="font-size:20px;font-weight:600;">Lead validation portal</h1>
+      </div>
+      <p class="subtitle">Upload leads from Facebook, the website, or Google Ads &mdash; get a clean, CRM-ready list back.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabBtnValidate">Validate leads</button>
+      <button class="tab-btn" id="tabBtnReports">Performance reports</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div id="validateTab" class="flex flex-col gap-5">
+    <div class="grid-2">
+      <div class="card" style="padding:20px;">
+        <div class="section-label">1. Bring in your leads</div>
+        <label class="dropzone" for="fileInput">
+          <strong>Click to upload a CSV file</strong>
+          <span>Exported from Google Sheets, Excel, or your ad platform</span>
+        </label>
+        <input type="file" id="fileInput" accept=".csv" class="hidden" />
+        <div class="divider"><div class="line"></div><span>OR</span><div class="line"></div></div>
+        <div class="row-flex">
+          <input type="text" id="sheetUrl" placeholder="Paste a published Google Sheets CSV link" />
+          <button class="btn-fetch" id="fetchBtn">Fetch</button>
+        </div>
+        <button class="link-btn" id="sampleBtn">Or load 34 sample leads to try the portal &rarr;</button>
+        <div id="fileNameBox" class="filename hidden"></div>
+        <div id="errorBox" class="error-box hidden"></div>
+      </div>
+
+      <div class="card" style="padding:20px;">
+        <div class="section-label">2. Serviceable PIN codes</div>
+        <p style="font-size:12px;color:var(--ink-soft);margin:10px 0;">Enter full 6-digit PIN codes or shorter prefixes (e.g. "700" covers all Kolkata PINs), separated by commas or new lines.</p>
+        <textarea id="serviceableInput" rows="6">700, 711, 712</textarea>
+        <div class="row-flex" style="margin-top:14px;">
+          <button class="btn-primary" id="runBtn" disabled>Run validation &rarr;</button>
+          <button class="btn-ghost hidden" id="resetBtn" title="Start over">&#8635;</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="resultsSection" class="flex flex-col gap-5 hidden"></div>
+  </div>
+
+  <div id="reportsTab" class="flex flex-col gap-5 hidden">
+    <div class="banner">Preview built with sample data. Once connected to your CRM and call logs, these numbers update automatically.</div>
+    <div class="tabs">
+      <button class="tab-btn active" id="periodDaily">Daily report</button>
+      <button class="tab-btn" id="periodWeekly">Weekly report</button>
+      <button class="tab-btn" id="periodMonthly">Monthly report</button>
+    </div>
+    <div id="reportContent"></div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------------------- domain logic ---------------------------- */
+
+const FIELD_ALIASES = {
+  name: ["name","customername","fullname","leadname","contactname"],
+  phone: ["phone","mobile","mobileno","mobilenumber","contactnumber","phonenumber","contact","contactno"],
+  pincode: ["pincode","pin","zip","zipcode","postalcode"],
+  email: ["email","emailid","emailaddress","mail"],
+  source: ["source","leadsource","channel","campaign"],
+  location: ["location","city","address","area"],
+};
+
+function normalizeHeader(h){ return String(h||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+
+function detectFields(headers){
+  const map = {};
+  headers.forEach(h=>{
+    const norm = normalizeHeader(h);
+    for(const [field, aliases] of Object.entries(FIELD_ALIASES)){
+      if(!map[field] && aliases.includes(norm)) map[field]=h;
+    }
+  });
+  return map;
+}
+
+function normalizePhone(raw){
+  if(!raw) return "";
+  let digits = String(raw).replace(/\D/g,"");
+  if(digits.length===12 && digits.startsWith("91")) digits = digits.slice(2);
+  if(digits.length===11 && digits.startsWith("0")) digits = digits.slice(1);
+  return digits;
+}
+const isValidPhone = d => /^[6-9]\d{9}$/.test(d);
+const isValidPincodeFormat = p => /^[1-9]\d{5}$/.test(String(p||"").trim());
+
+function parseServiceableList(text){
+  return text.split(/[,\n]/).map(s=>s.trim()).filter(Boolean);
+}
+function isServiceable(pin, list){
+  const p = String(pin||"").trim();
+  return list.some(s => p===s || (s.length<6 && p.startsWith(s)));
+}
+
+function processLeads(rows, fieldMap, serviceableList){
+  const seenKeys = new Set();
+  return rows.map(row=>{
+    const name = fieldMap.name ? row[fieldMap.name] : "";
+    const phoneRaw = fieldMap.phone ? row[fieldMap.phone] : "";
+    const pin = fieldMap.pincode ? row[fieldMap.pincode] : "";
+    const email = fieldMap.email ? row[fieldMap.email] : "";
+    const source = (fieldMap.source ? row[fieldMap.source] : "") || "Unknown";
+    const phone = normalizePhone(phoneRaw);
+
+    const reasons = [];
+    if(!name || !String(name).trim()) reasons.push("Missing name");
+    if(!phoneRaw || !String(phoneRaw).trim()) reasons.push("Missing phone number");
+    else if(!isValidPhone(phone)) reasons.push("Invalid mobile number format");
+    if(!pin || !String(pin).trim()) reasons.push("Missing PIN code");
+    else if(!isValidPincodeFormat(pin)) reasons.push("Invalid PIN code format");
+
+    let isDup = false;
+    const key = (phone && isValidPhone(phone)) ? "p:"+phone
+      : (email && String(email).trim() ? "e:"+String(email).toLowerCase().trim() : null);
+    if(key){
+      if(seenKeys.has(key)) isDup = true;
+      else seenKeys.add(key);
+    }
+
+    if(reasons.length===0 && isValidPincodeFormat(pin) && !isServiceable(pin, serviceableList)){
+      reasons.push("Outside serviceable area (PIN "+pin+")");
+    }
+
+    let status = "valid";
+    if(isDup) status = "duplicate";
+    else if(reasons.length>0) status = "invalid";
+
+    return {
+      name: name||"", phone: phoneRaw||"", normPhone: phone, pin: pin||"",
+      email: email||"", source, status, reasons,
+    };
+  });
+}
+
+/* ------------------------------ sample data ------------------------------ */
+
+const SAMPLE_NAMES = ["Priya Sharma","Rahul Verma","Ananya Das","Suresh Iyer","Meera Nair","Arjun Reddy","Kavita Joshi","Vikram Singh","Neha Gupta","Sanjay Rao","Pooja Mehta","Rohit Kapoor","Divya Menon","Amit Chatterjee","Sneha Pillai"];
+const SAMPLE_SOURCES = ["Facebook","Website","Google Ads"];
+const SERVICEABLE_PREFIXES = ["700","711","712"];
+const UNSERVICEABLE_PINS = ["400001","110001","560001","600001","500001"];
+
+function generateSampleLeads(){
+  const rows = [];
+  let seed = 0;
+  const rand = () => { seed += 1; return Math.abs(Math.sin(seed*999)) % 1; };
+
+  for(let i=0;i<34;i++){
+    const name = SAMPLE_NAMES[Math.floor(rand()*SAMPLE_NAMES.length)];
+    const source = SAMPLE_SOURCES[Math.floor(rand()*SAMPLE_SOURCES.length)];
+    let phone = "9" + Math.floor(100000000 + rand()*899999999).toString().slice(0,9);
+    let pin = SERVICEABLE_PREFIXES[Math.floor(rand()*SERVICEABLE_PREFIXES.length)] + Math.floor(100+rand()*899);
+
+    if(i % 9 === 0) phone = "12345" + Math.floor(10000+rand()*89999);
+    if(i % 11 === 0) phone = "";
+    if(i % 7 === 0) pin = UNSERVICEABLE_PINS[Math.floor(rand()*UNSERVICEABLE_PINS.length)];
+    if(i % 13 === 0) pin = "";
+    if(i % 15 === 0){
+      rows.push({Name:"",Phone:phone,PinCode:pin,Email:"",Source:source});
+      continue;
+    }
+
+    rows.push({
+      Name:name, Phone:phone, PinCode:String(pin),
+      Email:name.toLowerCase().replace(/\s/g,".")+"@example.com", Source:source,
+    });
+  }
+  rows.push({...rows[2]});
+  rows.push({...rows[5]});
+  rows.push({...rows[9], Name:"Priya Sharma (again)"});
+  return rows;
+}
+
+/* ------------------------------ report demo data ------------------------------ */
+
+const DAILY = {
+  totalLeads:42, validated:37, callsMade:34, salesClosed:6,
+  bySource:[{source:"Facebook",leads:18},{source:"Website",leads:14},{source:"Google Ads",leads:10}],
+};
+const WEEKLY = {
+  conversionRate:14.2, revenue:312000, bestSource:"Google Ads",
+  agents:[
+    {name:"Priya Sharma",handled:86,closed:14,conversion:16.3},
+    {name:"Ananya Das",handled:69,closed:11,conversion:15.9},
+    {name:"Rahul Verma",handled:74,closed:9,conversion:12.2},
+    {name:"Suresh Iyer",handled:58,closed:6,conversion:10.3},
+  ],
+};
+const MONTHLY = {
+  targetLeads:1400, achievedLeads:1268, targetRevenue:4200000, achievedRevenue:3860000, conversionPct:13.6,
+  rankings:[
+    {name:"Priya Sharma",closed:52},{name:"Ananya Das",closed:44},
+    {name:"Rahul Verma",closed:38},{name:"Suresh Iyer",closed:29},
+  ],
+  campaignROI:[
+    {campaign:"Facebook \u2013 Diwali offer",spend:120000,revenue:540000,roi:350},
+    {campaign:"Google Ads \u2013 Search",spend:180000,revenue:620000,roi:244},
+    {campaign:"Website organic",spend:20000,revenue:210000,roi:950},
+  ],
+};
+const inr = n => "\u20B9" + Number(n).toLocaleString("en-IN");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------------------------------- state ---------------------------------- */
+
+const state = {
+  tab: "validate", fileName: "", rawRows: null, headers: [],
+  results: null, error: "", filter: "all", query: "", reportPeriod: "daily",
+};
+
+/* ------------------------------- validate tab UI ------------------------------- */
+
+const fileInput = document.getElementById("fileInput");
+const sampleBtn = document.getElementById("sampleBtn");
+const fetchBtn = document.getElementById("fetchBtn");
+const sheetUrlInput = document.getElementById("sheetUrl");
+const runBtn = document.getElementById("runBtn");
+const resetBtn = document.getElementById("resetBtn");
+const errorBox = document.getElementById("errorBox");
+const fileNameBox = document.getElementById("fileNameBox");
+const resultsSection = document.getElementById("resultsSection");
+const serviceableInputEl = document.getElementById("serviceableInput");
+
+function showError(msg){
+  state.error = msg;
+  if(msg){ errorBox.textContent = msg; errorBox.classList.remove("hidden"); }
+  else errorBox.classList.add("hidden");
+}
+
+function loadRows(rows){
+  if(!rows || !rows.length){ showError("That file doesn't have any rows to read."); return; }
+  const hdrs = Object.keys(rows[0]);
+  const map = detectFields(hdrs);
+  if(!map.phone){
+    showError('Couldn\u2019t find a phone/mobile column in this file. Rename the column to something like "Phone" or "Mobile" and try again.');
+    return;
+  }
+  showError("");
+  state.headers = hdrs;
+  state.rawRows = rows;
+  state.results = null;
+  runBtn.disabled = false;
+  resetBtn.classList.remove("hidden");
+  resultsSection.classList.add("hidden");
+}
+
+fileInput.addEventListener("change", e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  state.fileName = file.name;
+  fileNameBox.textContent = "\u{1F4C4} " + file.name;
+  fileNameBox.classList.remove("hidden");
+  Papa.parse(file, {
+    header:true, skipEmptyLines:true,
+    complete: res => loadRows(res.data),
+    error: () => showError("Couldn't read that file. Make sure it's a valid CSV export."),
+  });
+});
+
+sampleBtn.addEventListener("click", ()=>{
+  state.fileName = "sample-leads.csv (generated)";
+  fileNameBox.textContent = "\u{1F4C4} " + state.fileName;
+  fileNameBox.classList.remove("hidden");
+  loadRows(generateSampleLeads());
+});
+
+fetchBtn.addEventListener("click", async ()=>{
+  const url = sheetUrlInput.value.trim();
+  if(!url) return;
+  fetchBtn.textContent = "Fetching\u2026";
+  fetchBtn.disabled = true;
+  showError("");
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("bad response");
+    const text = await res.text();
+    const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
+    state.fileName = "Google Sheet import";
+    fileNameBox.textContent = "\u{1F4C4} " + state.fileName;
+    fileNameBox.classList.remove("hidden");
+    loadRows(parsed.data);
+  }catch(err){
+    showError("Couldn't fetch that link directly \u2014 Google Sheets often blocks cross-origin requests from the browser. In Sheets, use File \u2192 Download \u2192 CSV and upload the file instead.");
+  }finally{
+    fetchBtn.textContent = "Fetch";
+    fetchBtn.disabled = false;
+  }
+});
+
+resetBtn.addEventListener("click", ()=>{
+  state.rawRows = null; state.headers = []; state.results = null; state.fileName = "";
+  fileInput.value = ""; fileNameBox.classList.add("hidden"); showError("");
+  runBtn.disabled = true; resetBtn.classList.add("hidden");
+  resultsSection.classList.add("hidden"); resultsSection.innerHTML = "";
+  state.filter = "all"; state.query = "";
+});
+
+runBtn.addEventListener("click", ()=>{
+  if(!state.rawRows) return;
+  const map = detectFields(state.headers);
+  const list = parseServiceableList(serviceableInputEl.value);
+  state.results = processLeads(state.rawRows, map, list);
+  state.filter = "all"; state.query = "";
+  renderResults();
+});
+
+function summarize(results){
+  const total = results.length;
+  const valid = results.filter(r=>r.status==="valid").length;
+  const invalid = results.filter(r=>r.status==="invalid").length;
+  const duplicate = results.filter(r=>r.status==="duplicate").length;
+  const bySource = {};
+  results.forEach(r=>{
+    bySource[r.source] = bySource[r.source] || {source:r.source, total:0, valid:0};
+    bySource[r.source].total += 1;
+    if(r.status==="valid") bySource[r.source].valid += 1;
+  });
+  return {total, valid, invalid, duplicate, bySource: Object.values(bySource)};
+}
+
+function badgeHtml(status){
+  const map = {
+    valid:{bg:"var(--valid-soft)",fg:"var(--valid)",label:"Valid"},
+    invalid:{bg:"var(--invalid-soft)",fg:"var(--invalid)",label:"Invalid"},
+    duplicate:{bg:"var(--dup-soft)",fg:"var(--dup)",label:"Duplicate"},
+  };
+  const s = map[status];
+  return '<span class="badge" style="background:'+s.bg+';color:'+s.fg+';">'+s.label+'</span>';
+}
+
+function renderResults(){
+  const summary = summarize(state.results);
+  const pct = n => summary.total ? (n/summary.total)*100 : 0;
+  const maxSourceTotal = Math.max(1, ...summary.bySource.map(s=>s.total));
+
+  const filtered = state.results.filter(r=>{
+    if(state.filter!=="all" && r.status!==state.filter) return false;
+    if(state.query.trim()){
+      const q = state.query.toLowerCase();
+      if(!String(r.name).toLowerCase().includes(q) && !String(r.phone).includes(q)) return false;
+    }
+    return true;
+  });
+
+  resultsSection.innerHTML = `
+    <div class="card" style="padding:22px;">
+      <div class="flex" style="align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div>
+          <div class="stat-label">Leads received</div>
+          <div class="stat-big">${summary.total}</div>
+        </div>
+        <div class="mini-stats">
+          <div><div class="mini-stat-label">Valid</div><div class="mini-stat-value" style="color:var(--valid);">${summary.valid} <span style="font-size:11px;color:var(--ink-soft);">(${pct(summary.valid).toFixed(0)}%)</span></div></div>
+          <div><div class="mini-stat-label">Invalid</div><div class="mini-stat-value" style="color:var(--invalid);">${summary.invalid} <span style="font-size:11px;color:var(--ink-soft);">(${pct(summary.invalid).toFixed(0)}%)</span></div></div>
+          <div><div class="mini-stat-label">Duplicate</div><div class="mini-stat-value" style="color:var(--dup);">${summary.duplicate} <span style="font-size:11px;color:var(--ink-soft);">(${pct(summary.duplicate).toFixed(0)}%)</span></div></div>
+        </div>
+      </div>
+      <div class="breakdown-bar">
+        ${summary.valid>0 ? `<div style="width:${pct(summary.valid)}%;background:var(--valid);"></div>` : ""}
+        ${summary.invalid>0 ? `<div style="width:${pct(summary.invalid)}%;background:var(--invalid);"></div>` : ""}
+        ${summary.duplicate>0 ? `<div style="width:${pct(summary.duplicate)}%;background:var(--dup);"></div>` : ""}
+      </div>
+    </div>
+
+    <div class="card" style="padding:20px;">
+      <div class="section-label">Valid leads by source</div>
+      <div style="margin-top:10px;">
+        ${summary.bySource.map(s=>`
+          <div class="source-bar-row">
+            <div class="source-bar-label">${esc(s.source)}</div>
+            <div class="source-bar-track">
+              <div class="source-bar-fill" style="width:${(s.total/maxSourceTotal)*100}%;opacity:0.25;position:absolute;inset:0;"></div>
+              <div class="source-bar-fill" style="width:${(s.valid/maxSourceTotal)*100}%;position:relative;"></div>
+            </div>
+            <div class="source-bar-count">${s.valid} / ${s.total}</div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <div class="card" style="padding:20px;">
+      <div class="flex" style="align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+        <div class="filters">
+          <button class="filter-btn ${state.filter==='all'?'active':''}" data-filter="all">All &middot; ${summary.total}</button>
+          <button class="filter-btn ${state.filter==='valid'?'active':''}" data-filter="valid">Valid &middot; ${summary.valid}</button>
+          <button class="filter-btn ${state.filter==='invalid'?'active':''}" data-filter="invalid">Invalid &middot; ${summary.invalid}</button>
+          <button class="filter-btn ${state.filter==='duplicate'?'active':''}" data-filter="duplicate">Duplicate &middot; ${summary.duplicate}</button>
+        </div>
+        <div class="search-wrap">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" id="searchInput" placeholder="Search name or phone" value="${esc(state.query)}" />
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Phone</th><th>PIN</th><th>Source</th><th>Status</th><th>Reason</th></tr></thead>
+          <tbody>
+            ${filtered.length ? filtered.map(r=>`
+              <tr>
+                <td>${r.name ? esc(r.name) : '<em class="muted">&mdash;</em>'}</td>
+                <td class="mono">${r.phone ? esc(r.phone) : '<em class="muted">&mdash;</em>'}</td>
+                <td class="mono">${r.pin ? esc(r.pin) : '<em class="muted">&mdash;</em>'}</td>
+                <td>${esc(r.source)}</td>
+                <td>${badgeHtml(r.status)}</td>
+                <td class="muted">${r.reasons.length ? esc(r.reasons.join(", ")) : "&mdash;"}</td>
+              </tr>
+            `).join("") : `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--ink-soft);">No leads match this filter.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <div class="download-row">
+        <button class="btn-download" id="dlValidCsv">&#8681; Valid leads (CSV)</button>
+        <button class="btn-download" id="dlValidXlsx">&#8681; Valid leads (Excel)</button>
+        <button class="btn-download primary" id="dlFullReport">&#8681; Full report, all statuses (Excel)</button>
+      </div>
+    </div>
+  `;
+  resultsSection.classList.remove("hidden");
+
+  resultsSection.querySelectorAll(".filter-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ state.filter = btn.dataset.filter; renderResults(); });
+  });
+  const searchInput = document.getElementById("searchInput");
+  searchInput.addEventListener("input", e=>{ state.query = e.target.value; renderResults(); searchInput.focus(); searchInput.selectionStart = searchInput.selectionEnd = searchInput.value.length; });
+
+  document.getElementById("dlValidCsv").addEventListener("click", ()=>downloadValid("csv"));
+  document.getElementById("dlValidXlsx").addEventListener("click", ()=>downloadValid("xlsx"));
+  document.getElementById("dlFullReport").addEventListener("click", downloadFullReport);
+}
+
+function downloadValid(type){
+  const rows = state.results.filter(r=>r.status==="valid").map(r=>({
+    Name:r.name, Phone:r.phone, Email:r.email, PinCode:r.pin, Source:r.source,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Valid leads");
+  XLSX.writeFile(wb, "valid-leads."+type);
+}
+
+function downloadFullReport(){
+  const rows = state.results.map(r=>({
+    Name:r.name, Phone:r.phone, Email:r.email, PinCode:r.pin,
+    Source:r.source, Status:r.status, Reasons:r.reasons.join("; "),
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "All leads");
+  XLSX.writeFile(wb, "lead-validation-report.xlsx");
+}
+
+/* --------------------------------- tabs --------------------------------- */
+
+const tabBtnValidate = document.getElementById("tabBtnValidate");
+const tabBtnReports = document.getElementById("tabBtnReports");
+const validateTab = document.getElementById("validateTab");
+const reportsTab = document.getElementById("reportsTab");
+
+tabBtnValidate.addEventListener("click", ()=>{
+  state.tab = "validate";
+  tabBtnValidate.classList.add("active"); tabBtnReports.classList.remove("active");
+  validateTab.classList.remove("hidden"); reportsTab.classList.add("hidden");
+});
+tabBtnReports.addEventListener("click", ()=>{
+  state.tab = "reports";
+  tabBtnReports.classList.add("active"); tabBtnValidate.classList.remove("active");
+  reportsTab.classList.remove("hidden"); validateTab.classList.add("hidden");
+  renderReport();
+});
+
+/* ------------------------------- reports tab ------------------------------- */
+
+const periodBtns = {
+  daily: document.getElementById("periodDaily"),
+  weekly: document.getElementById("periodWeekly"),
+  monthly: document.getElementById("periodMonthly"),
+};
+Object.entries(periodBtns).forEach(([key, btn])=>{
+  btn.addEventListener("click", ()=>{
+    state.reportPeriod = key;
+    Object.values(periodBtns).forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    renderReport();
+  });
+});
+
+function metricGrid(items){
+  return `<div class="metric-grid" style="grid-template-columns:repeat(${items.length},1fr);">
+    ${items.map(it=>`
+      <div class="card metric-card">
+        <div class="stat-label" style="font-size:11px;">${esc(it.label)}</div>
+        <div class="metric-value">${esc(it.value)}</div>
+      </div>
+    `).join("")}
+  </div>`;
+}
+
+function renderReport(){
+  const content = document.getElementById("reportContent");
+  if(state.reportPeriod === "daily"){
+    const d = DAILY;
+    const maxLeads = Math.max(...d.bySource.map(s=>s.leads));
+    content.innerHTML = `
+      ${metricGrid([
+        {label:"Total leads", value:d.totalLeads},
+        {label:"Validated", value:d.validated},
+        {label:"Calls made", value:d.callsMade},
+        {label:"Sales closed", value:d.salesClosed},
+      ])}
+      <div class="card" style="padding:20px;margin-top:20px;">
+        <div class="section-label">Leads by source, today</div>
+        <div style="margin-top:14px;">
+          ${d.bySource.map(s=>`
+            <div class="source-bar-row">
+              <div class="source-bar-label">${esc(s.source)}</div>
+              <div class="source-bar-track"><div class="source-bar-fill" style="width:${(s.leads/maxLeads)*100}%;background:var(--accent);"></div></div>
+              <div class="source-bar-count">${s.leads}</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  } else if(state.reportPeriod === "weekly"){
+    const d = WEEKLY;
+    content.innerHTML = `
+      ${metricGrid([
+        {label:"Conversion rate", value:d.conversionRate+"%"},
+        {label:"Revenue", value:inr(d.revenue)},
+        {label:"Best lead source", value:d.bestSource},
+      ])}
+      <div class="card" style="padding:20px;margin-top:20px;">
+        <div class="section-label">Agent performance</div>
+        <table style="margin-top:10px;">
+          <thead><tr><th>Agent</th><th>Leads handled</th><th>Closed</th><th>Conversion</th></tr></thead>
+          <tbody>
+            ${d.agents.map(a=>`
+              <tr>
+                <td>${esc(a.name)}</td>
+                <td class="mono">${a.handled}</td>
+                <td class="mono">${a.closed}</td>
+                <td class="mono" style="color:var(--valid);">${a.conversion}%</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else {
+    const d = MONTHLY;
+    const leadPct = Math.min(100, (d.achievedLeads/d.targetLeads)*100);
+    const revPct = Math.min(100, (d.achievedRevenue/d.targetRevenue)*100);
+    content.innerHTML = `
+      <div class="grid-2" style="grid-template-columns:1fr 1fr;">
+        <div class="card" style="padding:16px 18px;">
+          <div class="section-label">Leads: target vs achieved</div>
+          <div class="flex" style="align-items:baseline;gap:8px;margin-top:8px;">
+            <div style="font-family:var(--display);font-weight:700;font-size:26px;">${d.achievedLeads}</div>
+            <div style="font-size:13px;color:var(--ink-soft);">/ ${d.targetLeads} target</div>
+          </div>
+          <div class="progress"><div class="progress-fill" style="width:${leadPct}%;"></div></div>
+        </div>
+        <div class="card" style="padding:16px 18px;">
+          <div class="section-label">Revenue: target vs achieved</div>
+          <div class="flex" style="align-items:baseline;gap:8px;margin-top:8px;">
+            <div style="font-family:var(--display);font-weight:700;font-size:26px;">${inr(d.achievedRevenue)}</div>
+            <div style="font-size:13px;color:var(--ink-soft);">/ ${inr(d.targetRevenue)}</div>
+          </div>
+          <div class="progress"><div class="progress-fill" style="width:${revPct}%;"></div></div>
+        </div>
+      </div>
+      <div style="margin-top:20px;">${metricGrid([{label:"Overall conversion", value:d.conversionPct+"%"}])}</div>
+      <div class="card" style="padding:20px;margin-top:20px;">
+        <div class="section-label">Agent rankings</div>
+        <div style="margin-top:10px;">
+          ${d.rankings.map((r,i)=>`
+            <div class="rank-row">
+              <span class="rank-num">${i+1}</span>
+              <span style="flex:1;">${esc(r.name)}</span>
+              <span class="mono" style="font-weight:600;">${r.closed} closed</span>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+      <div class="card" style="padding:20px;margin-top:20px;">
+        <div class="section-label">Campaign ROI</div>
+        <table style="margin-top:10px;">
+          <thead><tr><th>Campaign</th><th>Spend</th><th>Revenue</th><th>ROI</th></tr></thead>
+          <tbody>
+            ${d.campaignROI.map(c=>`
+              <tr>
+                <td>${esc(c.campaign)}</td>
+                <td class="mono">${inr(c.spend)}</td>
+                <td class="mono">${inr(c.revenue)}</td>
+                <td class="mono" style="color:var(--valid);">${c.roi}%</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+}
+</script>
+</body>
+</html>
