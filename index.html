@@ -1,711 +1,752 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Lead validation portal</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retention Ops — Team Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
-  :root{
-    --page:#F4F5F0; --surface:#FFFFFF; --surface-muted:#ECEEE6; --border:#DEE1D6;
-    --ink:#151B2E; --ink-soft:#5B6472;
-    --accent:#0F8B8D; --accent-soft:#E3F2F1;
-    --valid:#2F7B4F; --valid-soft:#E5F2EA;
-    --invalid:#B23A2E; --invalid-soft:#FBE9E7;
-    --dup:#C17A22; --dup-soft:#FBF0DF;
-    --display:'Space Grotesk',sans-serif; --body:'Inter',sans-serif; --mono:'IBM Plex Mono',monospace;
-  }
-  *{box-sizing:border-box;}
-  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--body);}
-  h1,h2,h3{margin:0;font-family:var(--display);}
-  .wrap{max-width:1080px;margin:0 auto;padding:24px;}
-  .header{border-bottom:1px solid var(--border);background:var(--surface);}
-  .header-inner{max-width:1080px;margin:0 auto;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
-  .brand{display:flex;align-items:center;gap:8px;}
-  .brand-icon{width:30px;height:30px;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;}
-  .brand-logo{height:40px;width:auto;object-fit:contain;}
-  .subtitle{color:var(--ink-soft);font-size:13px;margin:4px 0 0 0;}
-  .tabs{display:flex;gap:8px;}
-  .tab-btn{font-family:var(--body);font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--ink-soft);cursor:pointer;}
-  .tab-btn.active{border-color:var(--ink);background:var(--ink);color:#fff;}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;}
-  .grid-2{display:grid;grid-template-columns:1.1fr 0.9fr;gap:16px;}
-  @media (max-width:760px){.grid-2{grid-template-columns:1fr;}}
-  .section-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;}
-  .dropzone{border:1.5px dashed var(--border);border-radius:10px;padding:22px 16px;text-align:center;margin-top:12px;background:var(--surface-muted);cursor:pointer;}
-  .dropzone strong{display:block;font-size:13px;font-weight:600;}
-  .dropzone span{font-size:12px;color:var(--ink-soft);margin-top:4px;display:block;}
-  .divider{display:flex;align-items:center;gap:8px;margin:12px 0;}
-  .divider .line{flex:1;height:1px;background:var(--border);}
-  .divider span{font-size:11px;color:var(--ink-soft);font-family:var(--mono);}
-  input[type=text], textarea{font-family:var(--body);font-size:12.5px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);width:100%;}
-  textarea{font-family:var(--mono);resize:vertical;}
-  .row-flex{display:flex;gap:8px;}
-  .link-btn{margin-top:10px;font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;font-weight:600;padding:0;display:block;}
-  .filename{margin-top:12px;font-size:12px;font-family:var(--mono);color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
-  .error-box{margin-top:12px;font-size:12px;color:var(--invalid);background:var(--invalid-soft);padding:8px 10px;border-radius:8px;}
-  .btn-primary{font-size:13px;font-weight:600;padding:10px 14px;border-radius:8px;border:none;background:var(--ink);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;flex:1;}
-  .btn-primary:disabled{background:var(--border);color:var(--ink-soft);cursor:not-allowed;}
-  .btn-ghost{padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;}
-  .btn-fetch{font-size:12px;font-weight:600;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;}
-  .stat-big{font-family:var(--display);font-weight:700;font-size:40px;line-height:1;}
-  .stat-label{font-size:12px;color:var(--ink-soft);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
-  .mini-stats{display:flex;gap:24px;}
-  .mini-stat-label{font-size:11px;color:var(--ink-soft);font-weight:600;}
-  .mini-stat-value{font-family:var(--mono);font-size:18px;font-weight:600;}
-  .breakdown-bar{display:flex;height:14px;border-radius:999px;overflow:hidden;background:var(--surface-muted);margin-top:16px;}
-  .badge{font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;}
-  .source-bar-row{display:flex;align-items:center;gap:10px;margin:8px 0;}
-  .source-bar-label{width:90px;font-size:12px;flex-shrink:0;}
-  .source-bar-track{flex:1;height:16px;background:var(--surface-muted);border-radius:6px;overflow:hidden;position:relative;}
-  .source-bar-fill{height:100%;background:var(--valid);}
-  .source-bar-count{font-family:var(--mono);font-size:11px;color:var(--ink-soft);width:70px;text-align:right;flex-shrink:0;}
-  .filters{display:flex;gap:8px;flex-wrap:wrap;}
-  .filter-btn{font-size:12px;font-weight:600;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--ink-soft);cursor:pointer;font-family:var(--mono);}
-  .filter-btn.active{border-color:var(--ink);background:var(--ink);color:#fff;}
-  .search-wrap{position:relative;}
-  .search-wrap input{padding-left:28px;width:200px;}
-  .search-icon{position:absolute;left:9px;top:9px;color:var(--ink-soft);font-size:12px;}
-  table{width:100%;border-collapse:collapse;font-size:12.5px;}
-  th{text-align:left;padding:8px 12px;font-weight:600;color:var(--ink-soft);font-size:11px;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border);background:var(--surface-muted);position:sticky;top:0;}
-  td{padding:8px 12px;border-bottom:1px solid var(--border);}
-  .table-wrap{max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;}
-  .mono{font-family:var(--mono);}
-  .muted{color:var(--ink-soft);}
-  .download-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
-  .btn-download{font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--ink);cursor:pointer;}
-  .btn-download.primary{border-color:var(--ink);background:var(--ink);color:#fff;}
-  .banner{font-size:12.5px;color:var(--ink-soft);background:var(--accent-soft);border:1px solid var(--border);border-radius:10px;padding:10px 14px;}
-  .metric-grid{display:grid;gap:12px;}
-  .metric-card{padding:14px 16px;}
-  .metric-value{font-family:var(--display);font-weight:700;font-size:24px;margin-top:4px;}
-  .progress{height:8px;border-radius:999px;background:var(--surface-muted);margin-top:10px;overflow:hidden;}
-  .progress-fill{height:100%;background:var(--accent);}
-  .rank-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
-  .rank-row:last-child{border-bottom:none;}
-  .rank-num{font-family:var(--mono);color:var(--ink-soft);width:20px;display:inline-block;}
-  .flex{display:flex;} .flex-col{flex-direction:column;} .gap-5{gap:20px;}
-  .hidden{display:none;}
+:root{
+  --ink:#101B2D;
+  --paper:#F5F6F3;
+  --surface:#FFFFFF;
+  --teal:#0C7C72;
+  --teal-soft:#E4F1EF;
+  --coral:#D1483A;
+  --coral-soft:#FBE9E6;
+  --amber:#C98A1F;
+  --amber-soft:#FBF0DD;
+  --slate:#8592A6;
+  --line:#E4E6E1;
+  --font-display:'Space Grotesk',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  font-family:var(--font-body);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.5;
+}
+.app{display:flex; min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{
+  width:236px; flex-shrink:0;
+  background:var(--ink); color:#fff;
+  display:flex; flex-direction:column;
+  padding:24px 16px;
+  position:sticky; top:0; height:100vh;
+}
+.brand{display:flex; align-items:center; gap:10px; padding:0 8px 24px; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:20px;}
+.brand-mark{width:30px; height:30px; border-radius:7px; background:linear-gradient(135deg,var(--teal),#14A398); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:600; font-size:13px;}
+.brand-text{font-family:var(--font-display); font-weight:700; font-size:15px; letter-spacing:-0.01em;}
+.brand-sub{font-size:10px; color:var(--slate); letter-spacing:0.05em; text-transform:uppercase; margin-top:1px;}
+
+.role-switch{margin-bottom:22px;}
+.role-switch label{font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--slate); display:block; margin-bottom:8px; padding:0 8px;}
+.role-pills{display:flex; flex-direction:column; gap:4px;}
+.role-pill{
+  background:rgba(255,255,255,0.05); border:1px solid transparent; color:#C7CDD8;
+  padding:8px 12px; border-radius:8px; font-size:12.5px; text-align:left; cursor:pointer;
+  font-family:var(--font-body); font-weight:500; transition:all .15s ease;
+}
+.role-pill:hover{background:rgba(255,255,255,0.09);}
+.role-pill.active{background:var(--teal); color:#fff;}
+
+nav.navlist{display:flex; flex-direction:column; gap:2px; flex:1;}
+.navlist a{
+  display:flex; align-items:center; gap:10px;
+  color:#C7CDD8; text-decoration:none; font-size:13px; font-weight:500;
+  padding:9px 12px; border-radius:8px; transition:all .15s ease;
+}
+.navlist a .dot{width:5px; height:5px; border-radius:50%; background:var(--slate); flex-shrink:0;}
+.navlist a:hover{background:rgba(255,255,255,0.06); color:#fff;}
+.navlist a.active{background:rgba(255,255,255,0.1); color:#fff;}
+.navlist a.active .dot{background:var(--teal); box-shadow:0 0 0 3px rgba(12,124,114,0.35);}
+.nav-section-label{font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--slate); padding:14px 12px 6px;}
+
+.sidebar-foot{border-top:1px solid rgba(255,255,255,0.1); padding-top:14px; font-size:11px; color:var(--slate);}
+
+/* MAIN */
+.content{flex:1; min-width:0; padding:28px 36px 60px;}
+.topbar{display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:22px;}
+.page-title{font-family:var(--font-display); font-size:22px; font-weight:700; letter-spacing:-0.01em;}
+.page-desc{color:var(--slate); font-size:13px; margin-top:3px;}
+
+.filters{display:flex; gap:8px; flex-wrap:wrap;}
+.filters select{
+  font-family:var(--font-body); font-size:12.5px; font-weight:500; color:var(--ink);
+  background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+  cursor:pointer;
+}
+
+.page{display:none;}
+.page.active{display:block; animation:fadein .25s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+/* KPI CARDS */
+.kpi-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:26px;}
+.kpi-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px;}
+.kpi-label{font-size:11px; color:var(--slate); text-transform:uppercase; letter-spacing:0.04em; font-weight:600; margin-bottom:8px;}
+.kpi-value{font-family:var(--font-mono); font-size:24px; font-weight:600; letter-spacing:-0.02em;}
+.kpi-value.teal{color:var(--teal);}
+.kpi-value.coral{color:var(--coral);}
+.kpi-sub{font-size:11.5px; color:var(--slate); margin-top:5px;}
+.kpi-sub.up{color:var(--teal);}
+.kpi-sub.down{color:var(--coral);}
+
+/* CARD / SECTION */
+.card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:20px;}
+.card-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
+.card-title{font-family:var(--font-display); font-size:15px; font-weight:600;}
+.card-note{font-size:11.5px; color:var(--slate);}
+.grid-2{display:grid; grid-template-columns:1.3fr 1fr; gap:20px;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+@media(max-width:980px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+/* FUNNEL — signature element */
+.funnel-wrap{padding:10px 4px 4px;}
+.funnel-row{display:flex; align-items:stretch; gap:0; position:relative;}
+.funnel-stage{
+  flex:1; text-align:center; padding:18px 10px; position:relative;
+  border-right:1px dashed var(--line);
+}
+.funnel-stage:last-child{border-right:none;}
+.funnel-bar{height:6px; border-radius:3px; margin:0 auto 12px; background:var(--teal);}
+.funnel-num{font-family:var(--font-mono); font-size:19px; font-weight:600;}
+.funnel-lbl{font-size:11px; color:var(--slate); margin-top:4px; text-transform:uppercase; letter-spacing:0.03em;}
+.funnel-arrow{align-self:center; color:var(--slate); font-size:16px; padding:0 4px;}
+.funnel-branch{
+  display:flex; justify-content:center; margin-top:2px;
+}
+.branch-line{width:1px; height:16px; background:var(--line);}
+.branch-box{
+  margin-top:14px; display:flex; justify-content:center;
+}
+.branch-pill{
+  background:var(--amber-soft); border:1px solid rgba(201,138,31,0.3); color:#8A5F0F;
+  border-radius:20px; padding:6px 14px; font-size:11.5px; font-weight:600; font-family:var(--font-mono);
+  display:flex; gap:6px; align-items:center;
+}
+
+/* TABLE */
+table{width:100%; border-collapse:collapse; font-size:12.5px;}
+th{text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--slate); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--line);}
+td{padding:10px 10px; border-bottom:1px solid var(--line); font-family:var(--font-mono); font-size:12.5px;}
+td.name-cell{font-family:var(--font-body); font-weight:500;}
+tr:last-child td{border-bottom:none;}
+tr.self-row{background:var(--teal-soft);}
+.pill{padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; font-family:var(--font-mono); display:inline-block;}
+.pill.good{background:var(--teal-soft); color:var(--teal);}
+.pill.warn{background:var(--coral-soft); color:var(--coral);}
+.bar-cell{display:flex; align-items:center; gap:8px;}
+.bar-track{flex:1; height:6px; background:var(--line); border-radius:3px; overflow:hidden; min-width:50px;}
+.bar-fill{height:100%; background:var(--teal); border-radius:3px;}
+.bar-fill.short{background:var(--coral);}
+
+/* CALL TYPE CARDS */
+.calltype-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px; cursor:pointer; transition:border-color .15s;}
+.calltype-card:hover{border-color:var(--teal);}
+.calltype-card.active{border-color:var(--teal); box-shadow:0 0 0 1px var(--teal);}
+.ct-icon{width:34px; height:34px; border-radius:9px; background:var(--teal-soft); color:var(--teal); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:600; font-size:13px; margin-bottom:12px;}
+.ct-name{font-weight:600; font-size:13.5px; margin-bottom:6px;}
+.ct-stats{font-size:11.5px; color:var(--slate);}
+.ct-stats b{color:var(--ink); font-family:var(--font-mono);}
+
+/* UPLOAD */
+.upload-row{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; background:var(--surface);}
+.upload-info{display:flex; gap:12px; align-items:center;}
+.upload-icon{width:36px; height:36px; border-radius:9px; background:var(--paper); display:flex; align-items:center; justify-content:center; font-size:15px;}
+.upload-name{font-weight:600; font-size:13px;}
+.upload-meta{font-size:11.5px; color:var(--slate); margin-top:2px;}
+.btn{
+  font-family:var(--font-body); font-weight:600; font-size:12px; border-radius:8px; padding:8px 14px;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; transition:all .15s;
+}
+.btn:hover{border-color:var(--ink);}
+.btn.primary{background:var(--ink); color:#fff; border-color:var(--ink);}
+.btn.primary:hover{background:#050D18;}
+
+.toast{
+  position:fixed; bottom:24px; right:24px; background:var(--ink); color:#fff; padding:12px 18px;
+  border-radius:10px; font-size:12.5px; font-weight:500; display:flex; align-items:center; gap:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.25); opacity:0; transform:translateY(10px); pointer-events:none; transition:all .25s ease; z-index:50;
+}
+.toast.show{opacity:1; transform:translateY(0);}
+.toast .dot{width:7px;height:7px;border-radius:50%; background:var(--teal);}
+
+.chart-box{position:relative; height:230px;}
+.access-note{background:var(--amber-soft); border:1px solid rgba(201,138,31,0.3); color:#8A5F0F; border-radius:10px; padding:12px 16px; font-size:12px; margin-bottom:18px;}
+.reason-tag{font-family:var(--font-body); font-size:11.5px; color:var(--slate);}
 </style>
 </head>
 <body>
+<div class="app">
 
-<div class="header">
-  <div class="header-inner">
-    <div>
-      <div class="brand">
-        <img src="https://raw.githubusercontent.com/GTPLKCBPL-RETENTION/-Lead-validation-portal/main/logo.png" alt="GTPL KCBPL Digital Cable TV and Broadband" class="brand-logo" />
-        <h1 style="font-size:20px;font-weight:600;">Lead validation portal</h1>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">RT</div>
+      <div>
+        <div class="brand-text">Retention Ops</div>
+        <div class="brand-sub">Team Dashboard</div>
       </div>
-      <p class="subtitle">Upload leads from Facebook, the website, or Google Ads &mdash; get a clean, CRM-ready list back.</p>
     </div>
-    <div class="tabs">
-      <button class="tab-btn active" id="tabBtnValidate">Validate leads</button>
-      <button class="tab-btn" id="tabBtnReports">Performance reports</button>
+
+    <div class="role-switch">
+      <label>Viewing as</label>
+      <div class="role-pills">
+        <button class="role-pill active" data-role="admin">Admin</button>
+        <button class="role-pill" data-role="lead">Team Leader</button>
+        <button class="role-pill" data-role="agent">Agent</button>
+      </div>
     </div>
-  </div>
+
+    <nav class="navlist">
+      <div class="nav-section-label">Retention Team</div>
+      <a href="#" class="navlink active" data-page="overview"><span class="dot"></span>Overview</a>
+      <a href="#" class="navlink" data-page="target"><span class="dot"></span>Target vs Achievement</a>
+      <a href="#" class="navlink" data-page="calltype"><span class="dot"></span>Call-Type Performance</a>
+      <a href="#" class="navlink" data-page="team"><span class="dot"></span>Team &amp; Agents</a>
+      <div class="nav-section-label admin-only">Admin</div>
+      <a href="#" class="navlink admin-only" data-page="admin"><span class="dot"></span>Data Upload</a>
+    </nav>
+
+    <div class="sidebar-foot">
+      Prototype build · mock data<br>Business Development page — scope pending
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <!-- OVERVIEW -->
+    <section class="page active" id="page-overview">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Overall Retention Team Dashboard</div>
+          <div class="page-desc">Consolidated performance across all call types</div>
+        </div>
+        <div class="filters">
+          <select id="ov-month"></select>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="ov-kpis"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Customer Call Funnel</div>
+            <div class="card-note">Total attempts → unique customers → contactable → renewal-eligible → renewed</div>
+          </div>
+        </div>
+        <div class="funnel-wrap" id="funnel"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Renewal % Trend</div>
+            <div class="card-note">Last 6 months</div>
+          </div>
+          <div class="chart-box"><canvas id="trendChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Calls by Type</div>
+            <div class="card-note">Selected month</div>
+          </div>
+          <div class="chart-box"><canvas id="ctPie"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TARGET VS ACHIEVEMENT -->
+    <section class="page" id="page-target">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Target vs. Achievement</div>
+          <div class="page-desc">Targets uploaded quarterly/annually by Admin; daily &amp; monthly views are prorated by working days</div>
+        </div>
+        <div class="filters">
+          <select id="tgt-period">
+            <option>Daily</option>
+            <option selected>Current Month</option>
+            <option>3 Months</option>
+            <option>6 Months</option>
+            <option>9 Months</option>
+            <option>12 Months</option>
+            <option>Quarterly</option>
+            <option>Annual</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-3" id="tgt-kpis"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Target vs. Achievement by KPI</div>
+          <div class="card-note">Shortfall highlighted in coral</div>
+        </div>
+        <div class="chart-box" style="height:260px;"><canvas id="tgtChart"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">Shortfall Detail</div></div>
+        <table>
+          <thead><tr><th>KPI</th><th>Target</th><th>Achievement</th><th>Achievement %</th><th>Shortfall</th></tr></thead>
+          <tbody id="tgt-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CALL TYPE -->
+    <section class="page" id="page-calltype">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Call-Type Performance</div>
+          <div class="page-desc">Separate reporting per call-type source report</div>
+        </div>
+        <div class="filters">
+          <select id="ct-month"></select>
+        </div>
+      </div>
+
+      <div class="grid-3" id="ct-cards" style="margin-bottom:20px; grid-template-columns:repeat(3,1fr);"></div>
+      <div class="grid-3" id="ct-cards2" style="margin-bottom:20px; grid-template-columns:repeat(2,1fr);"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title" id="ct-detail-title">Reason Breakdown — Inactive Calls</div>
+            <div class="card-note">Contactable / not-contactable classification per outcome reason</div>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>Reason</th><th>Category</th><th>Count</th><th>Contactable</th><th>Renewal-eligible</th></tr></thead>
+          <tbody id="ct-reason-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TEAM -->
+    <section class="page" id="page-team">
+      <div class="topbar">
+        <div>
+          <div class="page-title" id="team-title">Team &amp; Agent Performance</div>
+          <div class="page-desc" id="team-desc">Compare agents across calls, contactability and renewals</div>
+        </div>
+        <div class="filters">
+          <select id="team-filter"></select>
+        </div>
+      </div>
+
+      <div class="access-note" id="agent-note" style="display:none;">
+        Agent view — you can see your own performance and your teammates' performance for comparison.
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Agent Ranking</div>
+          <div class="card-note">Selected month · sorted by Achievement %</div>
+        </div>
+        <table>
+          <thead><tr><th>#</th><th>Agent</th><th>Team</th><th>Calls</th><th>Contactable %</th><th>Renewal %</th><th>Achievement</th></tr></thead>
+          <tbody id="team-table"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ADMIN -->
+    <section class="page" id="page-admin">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Admin Data Upload</div>
+          <div class="page-desc">Only Admin can upload, replace, update or delete source files</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">Source Files</div></div>
+        <div id="upload-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">Upload History</div></div>
+        <table>
+          <thead><tr><th>File</th><th>Uploaded By</th><th>Date</th><th>Rows</th><th>Status</th></tr></thead>
+          <tbody id="upload-history"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
 </div>
 
-<div class="wrap">
-
-  <div id="validateTab" class="flex flex-col gap-5">
-    <div class="grid-2">
-      <div class="card" style="padding:20px;">
-        <div class="section-label">1. Bring in your leads</div>
-        <label class="dropzone" for="fileInput">
-          <strong>Click to upload a CSV file</strong>
-          <span>Exported from Google Sheets, Excel, or your ad platform</span>
-        </label>
-        <input type="file" id="fileInput" accept=".csv" class="hidden" />
-        <div class="divider"><div class="line"></div><span>OR</span><div class="line"></div></div>
-        <div class="row-flex">
-          <input type="text" id="sheetUrl" placeholder="Paste a published Google Sheets CSV link" />
-          <button class="btn-fetch" id="fetchBtn">Fetch</button>
-        </div>
-        <button class="link-btn" id="sampleBtn">Or load 34 sample leads to try the portal &rarr;</button>
-        <div id="fileNameBox" class="filename hidden"></div>
-        <div id="errorBox" class="error-box hidden"></div>
-      </div>
-
-      <div class="card" style="padding:20px;">
-        <div class="section-label">2. Serviceable PIN codes</div>
-        <p style="font-size:12px;color:var(--ink-soft);margin:10px 0;">Enter full 6-digit PIN codes or shorter prefixes (e.g. "700" covers all Kolkata PINs), separated by commas or new lines.</p>
-        <textarea id="serviceableInput" rows="6">700, 711, 712</textarea>
-        <div class="row-flex" style="margin-top:14px;">
-          <button class="btn-primary" id="runBtn" disabled>Run validation &rarr;</button>
-          <button class="btn-ghost hidden" id="resetBtn" title="Start over">&#8635;</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="resultsSection" class="flex flex-col gap-5 hidden"></div>
-  </div>
-
-  <div id="reportsTab" class="flex flex-col gap-5 hidden">
-    <div class="banner">Preview built with sample data. Once connected to your CRM and call logs, these numbers update automatically.</div>
-    <div class="tabs">
-      <button class="tab-btn active" id="periodDaily">Daily report</button>
-      <button class="tab-btn" id="periodWeekly">Weekly report</button>
-      <button class="tab-btn" id="periodMonthly">Monthly report</button>
-    </div>
-    <div id="reportContent"></div>
-  </div>
-
-</div>
+<div class="toast" id="toast"><span class="dot"></span><span id="toast-text"></span></div>
 
 <script>
-/* ---------------------------- domain logic ---------------------------- */
+/* ---------------- MOCK DATA (deterministic) ---------------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rng = mulberry32(42);
+const months = ['Mar 2026','Apr 2026','May 2026','Jun 2026','Jul 2026','Aug 2026'];
+const callTypes = [
+  {key:'inactive', name:'Current Inactive Calls', icon:'IN'},
+  {key:'upcoming', name:'Upcoming Renewal Calls', icon:'UP'},
+  {key:'p2p', name:'P2P Calls', icon:'P2'},
+  {key:'churn', name:'Churn / Retention Calls', icon:'CH'},
+  {key:'operator', name:'Operator / CATV Feedback', icon:'OP'}
+];
+const teams = ['Team Nova','Team Orion'];
+const agentNames = ['Ritwik Sen','Ananya Ghosh','Farhan Ali','Priya Nair','Debjit Roy','Sneha Das','Karan Mehta','Ishita Bose','Rahul Verma','Meghna Iyer'];
+const agents = agentNames.map((name,i)=>({id:i+1,name,team:teams[i%2],lead:teams[i%2]==='Team Nova'?'Anwesha (TL)':'Sourav (TL)'}));
+const CURRENT_AGENT_ID = 3; // for "agent" role simulation
 
-const FIELD_ALIASES = {
-  name: ["name","customername","fullname","leadname","contactname"],
-  phone: ["phone","mobile","mobileno","mobilenumber","contactnumber","phonenumber","contact","contactno"],
-  pincode: ["pincode","pin","zip","zipcode","postalcode"],
-  email: ["email","emailid","emailaddress","mail"],
-  source: ["source","leadsource","channel","campaign"],
-  location: ["location","city","address","area"],
-};
+const notContactableReasons = [
+  'Conv Not Done, Call Back Later','Conv Not Done, LBO No','Conv Not Done, No Response in Call','Conv Not Done, Wrong Number'
+];
+const contactableReasons = [
+  'Renewed','Churn Request, No Usage','Churn Request, Not Interested','Churn Request, Shifted to Other ISP',
+  'Churn Request, Transferred/Relocated','LBO Shifted to Other ISP','Inactive customer',
+  'Other Reason, Behavior Issue (CC)','Payment Related, Will Pay Later','Technical Issue, Fiber Cut/Physical Issue'
+];
 
-function normalizeHeader(h){ return String(h||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
-
-function detectFields(headers){
-  const map = {};
-  headers.forEach(h=>{
-    const norm = normalizeHeader(h);
-    for(const [field, aliases] of Object.entries(FIELD_ALIASES)){
-      if(!map[field] && aliases.includes(norm)) map[field]=h;
-    }
-  });
-  return map;
-}
-
-function normalizePhone(raw){
-  if(!raw) return "";
-  let digits = String(raw).replace(/\D/g,"");
-  if(digits.length===12 && digits.startsWith("91")) digits = digits.slice(2);
-  if(digits.length===11 && digits.startsWith("0")) digits = digits.slice(1);
-  return digits;
-}
-const isValidPhone = d => /^[6-9]\d{9}$/.test(d);
-const isValidPincodeFormat = p => /^[1-9]\d{5}$/.test(String(p||"").trim());
-
-function parseServiceableList(text){
-  return text.split(/[,\n]/).map(s=>s.trim()).filter(Boolean);
-}
-function isServiceable(pin, list){
-  const p = String(pin||"").trim();
-  return list.some(s => p===s || (s.length<6 && p.startsWith(s)));
-}
-
-function processLeads(rows, fieldMap, serviceableList){
-  const seenKeys = new Set();
-  return rows.map(row=>{
-    const name = fieldMap.name ? row[fieldMap.name] : "";
-    const phoneRaw = fieldMap.phone ? row[fieldMap.phone] : "";
-    const pin = fieldMap.pincode ? row[fieldMap.pincode] : "";
-    const email = fieldMap.email ? row[fieldMap.email] : "";
-    const source = (fieldMap.source ? row[fieldMap.source] : "") || "Unknown";
-    const phone = normalizePhone(phoneRaw);
-
-    const reasons = [];
-    if(!name || !String(name).trim()) reasons.push("Missing name");
-    if(!phoneRaw || !String(phoneRaw).trim()) reasons.push("Missing phone number");
-    else if(!isValidPhone(phone)) reasons.push("Invalid mobile number format");
-    if(!pin || !String(pin).trim()) reasons.push("Missing PIN code");
-    else if(!isValidPincodeFormat(pin)) reasons.push("Invalid PIN code format");
-
-    let isDup = false;
-    const key = (phone && isValidPhone(phone)) ? "p:"+phone
-      : (email && String(email).trim() ? "e:"+String(email).toLowerCase().trim() : null);
-    if(key){
-      if(seenKeys.has(key)) isDup = true;
-      else seenKeys.add(key);
-    }
-
-    if(reasons.length===0 && isValidPincodeFormat(pin) && !isServiceable(pin, serviceableList)){
-      reasons.push("Outside serviceable area (PIN "+pin+")");
-    }
-
-    let status = "valid";
-    if(isDup) status = "duplicate";
-    else if(reasons.length>0) status = "invalid";
-
+function genMonthly(){
+  return months.map((m,idx)=>{
+    const totalAttempts = 9200 + Math.floor(rng()*900) + idx*60;
+    const unique = Math.floor(totalAttempts*(0.78+rng()*0.05));
+    const notContactablePct = 0.16+rng()*0.04;
+    const contactable = Math.floor(unique*(1-notContactablePct));
+    const lboShifted = Math.floor(contactable*0.045);
+    const renewalEligible = contactable - lboShifted;
+    const renewed = Math.floor(renewalEligible*(0.46+rng()*0.08+idx*0.01));
+    const target = 5200 + idx*40;
+    const achievement = renewed;
     return {
-      name: name||"", phone: phoneRaw||"", normPhone: phone, pin: pin||"",
-      email: email||"", source, status, reasons,
+      month:m, totalAttempts, unique, contactable,
+      contactablePct: contactable/unique*100,
+      lboShifted, renewalEligible, renewed,
+      renewalPct: renewed/renewalEligible*100,
+      target, achievement, shortfall: Math.max(target-achievement,0)
     };
   });
 }
+const monthly = genMonthly();
 
-/* ------------------------------ sample data ------------------------------ */
+function genCallTypeBreakdown(monthIdx){
+  return callTypes.map(ct=>{
+    const base = 1500+Math.floor(rng()*900);
+    const contactablePct = 0.72+rng()*0.15;
+    const contactable = Math.floor(base*contactablePct);
+    const renewed = Math.floor(contactable*(0.35+rng()*0.25));
+    return {...ct, calls:base, contactable, contactablePct:contactablePct*100, renewed, renewalPct: renewed/contactable*100};
+  });
+}
+const ctByMonth = months.map((m,i)=>genCallTypeBreakdown(i));
 
-const SAMPLE_NAMES = ["Priya Sharma","Rahul Verma","Ananya Das","Suresh Iyer","Meera Nair","Arjun Reddy","Kavita Joshi","Vikram Singh","Neha Gupta","Sanjay Rao","Pooja Mehta","Rohit Kapoor","Divya Menon","Amit Chatterjee","Sneha Pillai"];
-const SAMPLE_SOURCES = ["Facebook","Website","Google Ads"];
-const SERVICEABLE_PREFIXES = ["700","711","712"];
-const UNSERVICEABLE_PINS = ["400001","110001","560001","600001","500001"];
-
-function generateSampleLeads(){
+function genReasonTable(){
   const rows = [];
-  let seed = 0;
-  const rand = () => { seed += 1; return Math.abs(Math.sin(seed*999)) % 1; };
-
-  for(let i=0;i<34;i++){
-    const name = SAMPLE_NAMES[Math.floor(rand()*SAMPLE_NAMES.length)];
-    const source = SAMPLE_SOURCES[Math.floor(rand()*SAMPLE_SOURCES.length)];
-    let phone = "9" + Math.floor(100000000 + rand()*899999999).toString().slice(0,9);
-    let pin = SERVICEABLE_PREFIXES[Math.floor(rand()*SERVICEABLE_PREFIXES.length)] + Math.floor(100+rand()*899);
-
-    if(i % 9 === 0) phone = "12345" + Math.floor(10000+rand()*89999);
-    if(i % 11 === 0) phone = "";
-    if(i % 7 === 0) pin = UNSERVICEABLE_PINS[Math.floor(rand()*UNSERVICEABLE_PINS.length)];
-    if(i % 13 === 0) pin = "";
-    if(i % 15 === 0){
-      rows.push({Name:"",Phone:phone,PinCode:pin,Email:"",Source:source});
-      continue;
-    }
-
-    rows.push({
-      Name:name, Phone:phone, PinCode:String(pin),
-      Email:name.toLowerCase().replace(/\s/g,".")+"@example.com", Source:source,
-    });
-  }
-  rows.push({...rows[2]});
-  rows.push({...rows[5]});
-  rows.push({...rows[9], Name:"Priya Sharma (again)"});
+  notContactableReasons.forEach(r=>{
+    rows.push({reason:r, category:'Not Contactable', count: 20+Math.floor(rng()*80), contactable:false, renewal:false});
+  });
+  contactableReasons.forEach(r=>{
+    const isLbo = r==='LBO Shifted to Other ISP';
+    rows.push({reason:r, category:'Contactable', count: 15+Math.floor(rng()*120), contactable:true, renewal: !isLbo});
+  });
   return rows;
 }
+const reasonTable = genReasonTable();
 
-/* ------------------------------ report demo data ------------------------------ */
-
-const DAILY = {
-  totalLeads:42, validated:37, callsMade:34, salesClosed:6,
-  bySource:[{source:"Facebook",leads:18},{source:"Website",leads:14},{source:"Google Ads",leads:10}],
-};
-const WEEKLY = {
-  conversionRate:14.2, revenue:312000, bestSource:"Google Ads",
-  agents:[
-    {name:"Priya Sharma",handled:86,closed:14,conversion:16.3},
-    {name:"Ananya Das",handled:69,closed:11,conversion:15.9},
-    {name:"Rahul Verma",handled:74,closed:9,conversion:12.2},
-    {name:"Suresh Iyer",handled:58,closed:6,conversion:10.3},
-  ],
-};
-const MONTHLY = {
-  targetLeads:1400, achievedLeads:1268, targetRevenue:4200000, achievedRevenue:3860000, conversionPct:13.6,
-  rankings:[
-    {name:"Priya Sharma",closed:52},{name:"Ananya Das",closed:44},
-    {name:"Rahul Verma",closed:38},{name:"Suresh Iyer",closed:29},
-  ],
-  campaignROI:[
-    {campaign:"Facebook \u2013 Diwali offer",spend:120000,revenue:540000,roi:350},
-    {campaign:"Google Ads \u2013 Search",spend:180000,revenue:620000,roi:244},
-    {campaign:"Website organic",spend:20000,revenue:210000,roi:950},
-  ],
-};
-const inr = n => "\u20B9" + Number(n).toLocaleString("en-IN");
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-/* ---------------------------------- state ---------------------------------- */
-
-const state = {
-  tab: "validate", fileName: "", rawRows: null, headers: [],
-  results: null, error: "", filter: "all", query: "", reportPeriod: "daily",
-};
-
-/* ------------------------------- validate tab UI ------------------------------- */
-
-const fileInput = document.getElementById("fileInput");
-const sampleBtn = document.getElementById("sampleBtn");
-const fetchBtn = document.getElementById("fetchBtn");
-const sheetUrlInput = document.getElementById("sheetUrl");
-const runBtn = document.getElementById("runBtn");
-const resetBtn = document.getElementById("resetBtn");
-const errorBox = document.getElementById("errorBox");
-const fileNameBox = document.getElementById("fileNameBox");
-const resultsSection = document.getElementById("resultsSection");
-const serviceableInputEl = document.getElementById("serviceableInput");
-
-function showError(msg){
-  state.error = msg;
-  if(msg){ errorBox.textContent = msg; errorBox.classList.remove("hidden"); }
-  else errorBox.classList.add("hidden");
+function genAgentMonthly(){
+  return agents.map(a=>{
+    const calls = 780+Math.floor(rng()*260);
+    const contactablePct = 68+rng()*22;
+    const renewalPct = 32+rng()*30;
+    const target = 480+Math.floor(rng()*60);
+    const achievement = Math.floor(target*(0.72+rng()*0.45));
+    return {...a, calls, contactablePct, renewalPct, target, achievement, achPct: achievement/target*100};
+  }).sort((x,y)=>y.achPct-x.achPct);
 }
+const agentMonthly = genAgentMonthly();
 
-function loadRows(rows){
-  if(!rows || !rows.length){ showError("That file doesn't have any rows to read."); return; }
-  const hdrs = Object.keys(rows[0]);
-  const map = detectFields(hdrs);
-  if(!map.phone){
-    showError('Couldn\u2019t find a phone/mobile column in this file. Rename the column to something like "Phone" or "Mobile" and try again.');
-    return;
-  }
-  showError("");
-  state.headers = hdrs;
-  state.rawRows = rows;
-  state.results = null;
-  runBtn.disabled = false;
-  resetBtn.classList.remove("hidden");
-  resultsSection.classList.add("hidden");
-}
+/* ---------------- ROLE / NAV ---------------- */
+let currentRole = 'admin';
+const roleLabel = {admin:'Admin', lead:'Team Leader', agent:'Agent'};
 
-fileInput.addEventListener("change", e=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  state.fileName = file.name;
-  fileNameBox.textContent = "\u{1F4C4} " + file.name;
-  fileNameBox.classList.remove("hidden");
-  Papa.parse(file, {
-    header:true, skipEmptyLines:true,
-    complete: res => loadRows(res.data),
-    error: () => showError("Couldn't read that file. Make sure it's a valid CSV export."),
-  });
-});
-
-sampleBtn.addEventListener("click", ()=>{
-  state.fileName = "sample-leads.csv (generated)";
-  fileNameBox.textContent = "\u{1F4C4} " + state.fileName;
-  fileNameBox.classList.remove("hidden");
-  loadRows(generateSampleLeads());
-});
-
-fetchBtn.addEventListener("click", async ()=>{
-  const url = sheetUrlInput.value.trim();
-  if(!url) return;
-  fetchBtn.textContent = "Fetching\u2026";
-  fetchBtn.disabled = true;
-  showError("");
-  try{
-    const res = await fetch(url);
-    if(!res.ok) throw new Error("bad response");
-    const text = await res.text();
-    const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
-    state.fileName = "Google Sheet import";
-    fileNameBox.textContent = "\u{1F4C4} " + state.fileName;
-    fileNameBox.classList.remove("hidden");
-    loadRows(parsed.data);
-  }catch(err){
-    showError("Couldn't fetch that link directly \u2014 Google Sheets often blocks cross-origin requests from the browser. In Sheets, use File \u2192 Download \u2192 CSV and upload the file instead.");
-  }finally{
-    fetchBtn.textContent = "Fetch";
-    fetchBtn.disabled = false;
-  }
-});
-
-resetBtn.addEventListener("click", ()=>{
-  state.rawRows = null; state.headers = []; state.results = null; state.fileName = "";
-  fileInput.value = ""; fileNameBox.classList.add("hidden"); showError("");
-  runBtn.disabled = true; resetBtn.classList.add("hidden");
-  resultsSection.classList.add("hidden"); resultsSection.innerHTML = "";
-  state.filter = "all"; state.query = "";
-});
-
-runBtn.addEventListener("click", ()=>{
-  if(!state.rawRows) return;
-  const map = detectFields(state.headers);
-  const list = parseServiceableList(serviceableInputEl.value);
-  state.results = processLeads(state.rawRows, map, list);
-  state.filter = "all"; state.query = "";
-  renderResults();
-});
-
-function summarize(results){
-  const total = results.length;
-  const valid = results.filter(r=>r.status==="valid").length;
-  const invalid = results.filter(r=>r.status==="invalid").length;
-  const duplicate = results.filter(r=>r.status==="duplicate").length;
-  const bySource = {};
-  results.forEach(r=>{
-    bySource[r.source] = bySource[r.source] || {source:r.source, total:0, valid:0};
-    bySource[r.source].total += 1;
-    if(r.status==="valid") bySource[r.source].valid += 1;
-  });
-  return {total, valid, invalid, duplicate, bySource: Object.values(bySource)};
-}
-
-function badgeHtml(status){
-  const map = {
-    valid:{bg:"var(--valid-soft)",fg:"var(--valid)",label:"Valid"},
-    invalid:{bg:"var(--invalid-soft)",fg:"var(--invalid)",label:"Invalid"},
-    duplicate:{bg:"var(--dup-soft)",fg:"var(--dup)",label:"Duplicate"},
-  };
-  const s = map[status];
-  return '<span class="badge" style="background:'+s.bg+';color:'+s.fg+';">'+s.label+'</span>';
-}
-
-function renderResults(){
-  const summary = summarize(state.results);
-  const pct = n => summary.total ? (n/summary.total)*100 : 0;
-  const maxSourceTotal = Math.max(1, ...summary.bySource.map(s=>s.total));
-
-  const filtered = state.results.filter(r=>{
-    if(state.filter!=="all" && r.status!==state.filter) return false;
-    if(state.query.trim()){
-      const q = state.query.toLowerCase();
-      if(!String(r.name).toLowerCase().includes(q) && !String(r.phone).includes(q)) return false;
+document.querySelectorAll('.role-pill').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.role-pill').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentRole = btn.dataset.role;
+    document.querySelectorAll('.admin-only').forEach(el=>el.style.display = currentRole==='admin' ? '' : 'none');
+    if(currentRole==='admin' && document.querySelector('.navlink.active').dataset.page==='admin'){}
+    if(currentRole!=='admin'){
+      const activePage = document.querySelector('.page.active').id;
+      if(activePage==='page-admin') switchPage('overview');
     }
-    return true;
+    document.getElementById('agent-note').style.display = currentRole==='agent' ? 'flex' : 'none';
+    document.getElementById('team-desc').textContent = currentRole==='agent'
+      ? "Your performance alongside your teammates' — agents can view peer performance"
+      : "Compare agents across calls, contactability and renewals";
+    showToast('Switched to ' + roleLabel[currentRole] + ' view');
+    renderTeamTable();
   });
+});
 
-  resultsSection.innerHTML = `
-    <div class="card" style="padding:22px;">
-      <div class="flex" style="align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-        <div>
-          <div class="stat-label">Leads received</div>
-          <div class="stat-big">${summary.total}</div>
+function switchPage(page){
+  document.querySelectorAll('.navlink').forEach(l=>l.classList.toggle('active', l.dataset.page===page));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+page));
+}
+document.querySelectorAll('.navlink').forEach(link=>{
+  link.addEventListener('click',e=>{
+    e.preventDefault();
+    if(link.dataset.page==='admin' && currentRole!=='admin') return;
+    switchPage(link.dataset.page);
+  });
+});
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* ---------------- OVERVIEW PAGE ---------------- */
+const ovMonthSel = document.getElementById('ov-month');
+months.forEach((m,i)=>ovMonthSel.add(new Option(m,i)));
+ovMonthSel.value = months.length-1;
+
+function renderOverview(){
+  const idx = +ovMonthSel.value;
+  const d = monthly[idx];
+  const kpis = [
+    {label:'Total Call Attempts', val:d.totalAttempts.toLocaleString(), sub:'PRI Sheet · no dedup'},
+    {label:'Unique Customers Called', val:d.unique.toLocaleString(), sub:'Deduped across 4 reports'},
+    {label:'Contactable Count', val:d.contactable.toLocaleString(), cls:'teal'},
+    {label:'Contactable %', val:d.contactablePct.toFixed(1)+'%', cls:'teal'},
+    {label:'Renewal-Eligible', val:d.renewalEligible.toLocaleString(), sub:'Excl. LBO Shifted'},
+    {label:'Renewed Count', val:d.renewed.toLocaleString(), cls:'teal'},
+    {label:'Renewal %', val:d.renewalPct.toFixed(1)+'%', cls:'teal'},
+    {label:'Target Shortfall', val:d.shortfall.toLocaleString(), cls: d.shortfall>0?'coral':'teal'}
+  ];
+  document.getElementById('ov-kpis').innerHTML = kpis.map(k=>`
+    <div class="kpi-card">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value ${k.cls||''}">${k.val}</div>
+      ${k.sub?`<div class="kpi-sub">${k.sub}</div>`:''}
+    </div>`).join('');
+
+  const stages = [
+    {n:d.totalAttempts, l:'Total Attempts'},
+    {n:d.unique, l:'Unique Customers'},
+    {n:d.contactable, l:'Contactable'},
+    {n:d.renewalEligible, l:'Renewal-Eligible'},
+    {n:d.renewed, l:'Renewed'}
+  ];
+  const max = stages[0].n;
+  document.getElementById('funnel').innerHTML = `
+    <div class="funnel-row">
+      ${stages.map((s,i)=>`
+        <div class="funnel-stage">
+          <div class="funnel-bar" style="width:${20+ (s.n/max)*60}%"></div>
+          <div class="funnel-num">${s.n.toLocaleString()}</div>
+          <div class="funnel-lbl">${s.l}</div>
         </div>
-        <div class="mini-stats">
-          <div><div class="mini-stat-label">Valid</div><div class="mini-stat-value" style="color:var(--valid);">${summary.valid} <span style="font-size:11px;color:var(--ink-soft);">(${pct(summary.valid).toFixed(0)}%)</span></div></div>
-          <div><div class="mini-stat-label">Invalid</div><div class="mini-stat-value" style="color:var(--invalid);">${summary.invalid} <span style="font-size:11px;color:var(--ink-soft);">(${pct(summary.invalid).toFixed(0)}%)</span></div></div>
-          <div><div class="mini-stat-label">Duplicate</div><div class="mini-stat-value" style="color:var(--dup);">${summary.duplicate} <span style="font-size:11px;color:var(--ink-soft);">(${pct(summary.duplicate).toFixed(0)}%)</span></div></div>
-        </div>
-      </div>
-      <div class="breakdown-bar">
-        ${summary.valid>0 ? `<div style="width:${pct(summary.valid)}%;background:var(--valid);"></div>` : ""}
-        ${summary.invalid>0 ? `<div style="width:${pct(summary.invalid)}%;background:var(--invalid);"></div>` : ""}
-        ${summary.duplicate>0 ? `<div style="width:${pct(summary.duplicate)}%;background:var(--dup);"></div>` : ""}
-      </div>
+        ${i<stages.length-1?'<div class="funnel-arrow">→</div>':''}
+      `).join('')}
     </div>
-
-    <div class="card" style="padding:20px;">
-      <div class="section-label">Valid leads by source</div>
-      <div style="margin-top:10px;">
-        ${summary.bySource.map(s=>`
-          <div class="source-bar-row">
-            <div class="source-bar-label">${esc(s.source)}</div>
-            <div class="source-bar-track">
-              <div class="source-bar-fill" style="width:${(s.total/maxSourceTotal)*100}%;opacity:0.25;position:absolute;inset:0;"></div>
-              <div class="source-bar-fill" style="width:${(s.valid/maxSourceTotal)*100}%;position:relative;"></div>
-            </div>
-            <div class="source-bar-count">${s.valid} / ${s.total}</div>
-          </div>
-        `).join("")}
-      </div>
-    </div>
-
-    <div class="card" style="padding:20px;">
-      <div class="flex" style="align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
-        <div class="filters">
-          <button class="filter-btn ${state.filter==='all'?'active':''}" data-filter="all">All &middot; ${summary.total}</button>
-          <button class="filter-btn ${state.filter==='valid'?'active':''}" data-filter="valid">Valid &middot; ${summary.valid}</button>
-          <button class="filter-btn ${state.filter==='invalid'?'active':''}" data-filter="invalid">Invalid &middot; ${summary.invalid}</button>
-          <button class="filter-btn ${state.filter==='duplicate'?'active':''}" data-filter="duplicate">Duplicate &middot; ${summary.duplicate}</button>
-        </div>
-        <div class="search-wrap">
-          <span class="search-icon">&#128269;</span>
-          <input type="text" id="searchInput" placeholder="Search name or phone" value="${esc(state.query)}" />
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Name</th><th>Phone</th><th>PIN</th><th>Source</th><th>Status</th><th>Reason</th></tr></thead>
-          <tbody>
-            ${filtered.length ? filtered.map(r=>`
-              <tr>
-                <td>${r.name ? esc(r.name) : '<em class="muted">&mdash;</em>'}</td>
-                <td class="mono">${r.phone ? esc(r.phone) : '<em class="muted">&mdash;</em>'}</td>
-                <td class="mono">${r.pin ? esc(r.pin) : '<em class="muted">&mdash;</em>'}</td>
-                <td>${esc(r.source)}</td>
-                <td>${badgeHtml(r.status)}</td>
-                <td class="muted">${r.reasons.length ? esc(r.reasons.join(", ")) : "&mdash;"}</td>
-              </tr>
-            `).join("") : `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--ink-soft);">No leads match this filter.</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-      <div class="download-row">
-        <button class="btn-download" id="dlValidCsv">&#8681; Valid leads (CSV)</button>
-        <button class="btn-download" id="dlValidXlsx">&#8681; Valid leads (Excel)</button>
-        <button class="btn-download primary" id="dlFullReport">&#8681; Full report, all statuses (Excel)</button>
-      </div>
+    <div class="funnel-branch"><div class="branch-line"></div></div>
+    <div class="branch-box">
+      <div class="branch-pill">⤷ LBO Shifted to Other ISP: ${d.lboShifted.toLocaleString()} — Contactable, excluded from Renewal</div>
     </div>
   `;
-  resultsSection.classList.remove("hidden");
+  renderTrendChart();
+  renderCtPie(idx);
+}
+ovMonthSel.addEventListener('change', renderOverview);
 
-  resultsSection.querySelectorAll(".filter-btn").forEach(btn=>{
-    btn.addEventListener("click", ()=>{ state.filter = btn.dataset.filter; renderResults(); });
-  });
-  const searchInput = document.getElementById("searchInput");
-  searchInput.addEventListener("input", e=>{ state.query = e.target.value; renderResults(); searchInput.focus(); searchInput.selectionStart = searchInput.selectionEnd = searchInput.value.length; });
-
-  document.getElementById("dlValidCsv").addEventListener("click", ()=>downloadValid("csv"));
-  document.getElementById("dlValidXlsx").addEventListener("click", ()=>downloadValid("xlsx"));
-  document.getElementById("dlFullReport").addEventListener("click", downloadFullReport);
+let trendChart, ctPieChart;
+function renderTrendChart(){
+  const ctx = document.getElementById('trendChart');
+  const data = {
+    labels: months,
+    datasets:[{
+      label:'Renewal %', data: monthly.map(m=>m.renewalPct.toFixed(1)),
+      borderColor:'#0C7C72', backgroundColor:'rgba(12,124,114,0.08)', fill:true, tension:.35, pointRadius:3, pointBackgroundColor:'#0C7C72'
+    }]
+  };
+  if(trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx,{type:'line', data, options:{
+    plugins:{legend:{display:false}},
+    scales:{y:{ticks:{callback:v=>v+'%'}, grid:{color:'#EEEFEB'}}, x:{grid:{display:false}}},
+    maintainAspectRatio:false
+  }});
+}
+function renderCtPie(idx){
+  const ctx = document.getElementById('ctPie');
+  const d = ctByMonth[idx];
+  if(ctPieChart) ctPieChart.destroy();
+  ctPieChart = new Chart(ctx,{type:'doughnut', data:{
+    labels:d.map(c=>c.name),
+    datasets:[{data:d.map(c=>c.calls), backgroundColor:['#0C7C72','#14A398','#C98A1F','#D1483A','#8592A6'], borderWidth:0}]
+  }, options:{plugins:{legend:{position:'bottom', labels:{boxWidth:9, font:{size:10.5}}}}, maintainAspectRatio:false}});
 }
 
-function downloadValid(type){
-  const rows = state.results.filter(r=>r.status==="valid").map(r=>({
-    Name:r.name, Phone:r.phone, Email:r.email, PinCode:r.pin, Source:r.source,
+/* ---------------- TARGET VS ACHIEVEMENT ---------------- */
+let tgtChart;
+function renderTarget(){
+  const d = monthly[monthly.length-1];
+  const rows = [
+    {kpi:'Calls', target: d.totalAttempts, ach: Math.floor(d.totalAttempts*0.94)},
+    {kpi:'Contactable', target: Math.floor(d.unique*0.85), ach: d.contactable},
+    {kpi:'Renewals', target: d.target, ach: d.achievement}
+  ];
+  document.getElementById('tgt-kpis').innerHTML = rows.map(r=>{
+    const pct = r.ach/r.target*100;
+    return `<div class="kpi-card">
+      <div class="kpi-label">${r.kpi}</div>
+      <div class="kpi-value ${pct>=100?'teal':'coral'}">${pct.toFixed(1)}%</div>
+      <div class="kpi-sub">${r.ach.toLocaleString()} / ${r.target.toLocaleString()} target</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('tgt-table').innerHTML = rows.map(r=>{
+    const short = Math.max(r.target-r.ach,0);
+    const pct = (r.ach/r.target*100).toFixed(1);
+    return `<tr>
+      <td class="name-cell">${r.kpi}</td>
+      <td>${r.target.toLocaleString()}</td>
+      <td>${r.ach.toLocaleString()}</td>
+      <td><span class="pill ${pct>=100?'good':'warn'}">${pct}%</span></td>
+      <td>${short.toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+
+  const ctx = document.getElementById('tgtChart');
+  if(tgtChart) tgtChart.destroy();
+  tgtChart = new Chart(ctx,{type:'bar', data:{
+    labels: rows.map(r=>r.kpi),
+    datasets:[
+      {label:'Target', data: rows.map(r=>r.target), backgroundColor:'#E4E6E1', borderRadius:6},
+      {label:'Achievement', data: rows.map(r=>r.ach), backgroundColor: rows.map(r=>r.ach>=r.target?'#0C7C72':'#D1483A'), borderRadius:6}
+    ]
+  }, options:{plugins:{legend:{position:'bottom', labels:{boxWidth:9,font:{size:10.5}}}}, scales:{grid:{color:'#EEEFEB'}}, maintainAspectRatio:false}});
+}
+document.getElementById('tgt-period').addEventListener('change', ()=>showToast('Recalculated using working-days proration'));
+
+/* ---------------- CALL TYPE PAGE ---------------- */
+const ctMonthSel = document.getElementById('ct-month');
+months.forEach((m,i)=>ctMonthSel.add(new Option(m,i)));
+ctMonthSel.value = months.length-1;
+let activeCallType = 'inactive';
+
+function renderCallType(){
+  const idx = +ctMonthSel.value;
+  const d = ctByMonth[idx];
+  const first3 = d.slice(0,3), last2 = d.slice(3);
+  const cardHtml = c=>`
+    <div class="calltype-card ${activeCallType===c.key?'active':''}" data-ct="${c.key}">
+      <div class="ct-icon">${c.icon}</div>
+      <div class="ct-name">${c.name}</div>
+      <div class="ct-stats">Calls: <b>${c.calls.toLocaleString()}</b><br>Contactable: <b>${c.contactablePct.toFixed(0)}%</b> · Renewal: <b>${c.renewalPct.toFixed(0)}%</b></div>
+    </div>`;
+  document.getElementById('ct-cards').innerHTML = first3.map(cardHtml).join('');
+  document.getElementById('ct-cards2').innerHTML = last2.map(cardHtml).join('');
+  document.querySelectorAll('[data-ct]').forEach(el=>el.addEventListener('click',()=>{
+    activeCallType = el.dataset.ct; renderCallType();
   }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Valid leads");
-  XLSX.writeFile(wb, "valid-leads."+type);
+  const ctMeta = callTypes.find(c=>c.key===activeCallType);
+  document.getElementById('ct-detail-title').textContent = 'Reason Breakdown — ' + ctMeta.name;
+  document.getElementById('ct-reason-table').innerHTML = reasonTable.map(r=>`
+    <tr>
+      <td class="name-cell">${r.reason}</td>
+      <td><span class="pill ${r.contactable?'good':'warn'}">${r.category}</span></td>
+      <td>${r.count}</td>
+      <td>${r.contactable?'✓':'—'}</td>
+      <td>${r.renewal?'✓':'—'}</td>
+    </tr>`).join('');
+}
+ctMonthSel.addEventListener('change', renderCallType);
+
+/* ---------------- TEAM PAGE ---------------- */
+const teamFilterSel = document.getElementById('team-filter');
+teamFilterSel.add(new Option('All Teams','all'));
+teams.forEach(t=>teamFilterSel.add(new Option(t,t)));
+teamFilterSel.addEventListener('change', renderTeamTable);
+
+function renderTeamTable(){
+  const f = teamFilterSel.value;
+  let list = agentMonthly.filter(a=> f==='all' || a.team===f);
+  document.getElementById('team-table').innerHTML = list.map((a,i)=>{
+    const isSelf = currentRole==='agent' && a.id===CURRENT_AGENT_ID;
+    return `<tr class="${isSelf?'self-row':''}">
+      <td>${i+1}</td>
+      <td class="name-cell">${a.name}${isSelf?' (you)':''}</td>
+      <td class="name-cell" style="font-weight:400;color:var(--slate)">${a.team}</td>
+      <td>${a.calls.toLocaleString()}</td>
+      <td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${a.contactablePct}%"></div></div>${a.contactablePct.toFixed(0)}%</div></td>
+      <td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${a.renewalPct}%"></div></div>${a.renewalPct.toFixed(0)}%</div></td>
+      <td><span class="pill ${a.achPct>=100?'good':'warn'}">${a.achPct.toFixed(0)}%</span></td>
+    </tr>`;
+  }).join('');
 }
 
-function downloadFullReport(){
-  const rows = state.results.map(r=>({
-    Name:r.name, Phone:r.phone, Email:r.email, PinCode:r.pin,
-    Source:r.source, Status:r.status, Reasons:r.reasons.join("; "),
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "All leads");
-  XLSX.writeFile(wb, "lead-validation-report.xlsx");
-}
-
-/* --------------------------------- tabs --------------------------------- */
-
-const tabBtnValidate = document.getElementById("tabBtnValidate");
-const tabBtnReports = document.getElementById("tabBtnReports");
-const validateTab = document.getElementById("validateTab");
-const reportsTab = document.getElementById("reportsTab");
-
-tabBtnValidate.addEventListener("click", ()=>{
-  state.tab = "validate";
-  tabBtnValidate.classList.add("active"); tabBtnReports.classList.remove("active");
-  validateTab.classList.remove("hidden"); reportsTab.classList.add("hidden");
-});
-tabBtnReports.addEventListener("click", ()=>{
-  state.tab = "reports";
-  tabBtnReports.classList.add("active"); tabBtnValidate.classList.remove("active");
-  reportsTab.classList.remove("hidden"); validateTab.classList.add("hidden");
-  renderReport();
-});
-
-/* ------------------------------- reports tab ------------------------------- */
-
-const periodBtns = {
-  daily: document.getElementById("periodDaily"),
-  weekly: document.getElementById("periodWeekly"),
-  monthly: document.getElementById("periodMonthly"),
-};
-Object.entries(periodBtns).forEach(([key, btn])=>{
-  btn.addEventListener("click", ()=>{
-    state.reportPeriod = key;
-    Object.values(periodBtns).forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    renderReport();
-  });
-});
-
-function metricGrid(items){
-  return `<div class="metric-grid" style="grid-template-columns:repeat(${items.length},1fr);">
-    ${items.map(it=>`
-      <div class="card metric-card">
-        <div class="stat-label" style="font-size:11px;">${esc(it.label)}</div>
-        <div class="metric-value">${esc(it.value)}</div>
+/* ---------------- ADMIN PAGE ---------------- */
+const sourceFiles = [
+  {icon:'📞', name:'PRI Calls Sheet', meta:'Total Call Count source'},
+  {icon:'📋', name:'InactiveUserCallingReport', meta:'Call-type source'},
+  {icon:'📋', name:'UpcomingUserCallingReport', meta:'Call-type source'},
+  {icon:'📋', name:'P2PUserCallingReport', meta:'Call-type source'},
+  {icon:'📋', name:'Churn Call Report', meta:'Call-type source'},
+  {icon:'📋', name:'Operator / CATV Feedback Report', meta:'Call-type source'},
+  {icon:'🎯', name:'Agent Goal / Target Data', meta:'Quarterly or Annual targets'}
+];
+document.getElementById('upload-list').innerHTML = sourceFiles.map(f=>`
+  <div class="upload-row">
+    <div class="upload-info">
+      <div class="upload-icon">${f.icon}</div>
+      <div>
+        <div class="upload-name">${f.name}</div>
+        <div class="upload-meta">${f.meta} · .xlsx / .csv</div>
       </div>
-    `).join("")}
-  </div>`;
-}
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn" onclick="showToast('${f.name}: replace flow (mock)')">Replace</button>
+      <button class="btn primary" onclick="showToast('${f.name} uploaded — dashboards updating (mock)')">Upload</button>
+    </div>
+  </div>
+`).join('');
 
-function renderReport(){
-  const content = document.getElementById("reportContent");
-  if(state.reportPeriod === "daily"){
-    const d = DAILY;
-    const maxLeads = Math.max(...d.bySource.map(s=>s.leads));
-    content.innerHTML = `
-      ${metricGrid([
-        {label:"Total leads", value:d.totalLeads},
-        {label:"Validated", value:d.validated},
-        {label:"Calls made", value:d.callsMade},
-        {label:"Sales closed", value:d.salesClosed},
-      ])}
-      <div class="card" style="padding:20px;margin-top:20px;">
-        <div class="section-label">Leads by source, today</div>
-        <div style="margin-top:14px;">
-          ${d.bySource.map(s=>`
-            <div class="source-bar-row">
-              <div class="source-bar-label">${esc(s.source)}</div>
-              <div class="source-bar-track"><div class="source-bar-fill" style="width:${(s.leads/maxLeads)*100}%;background:var(--accent);"></div></div>
-              <div class="source-bar-count">${s.leads}</div>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-    `;
-  } else if(state.reportPeriod === "weekly"){
-    const d = WEEKLY;
-    content.innerHTML = `
-      ${metricGrid([
-        {label:"Conversion rate", value:d.conversionRate+"%"},
-        {label:"Revenue", value:inr(d.revenue)},
-        {label:"Best lead source", value:d.bestSource},
-      ])}
-      <div class="card" style="padding:20px;margin-top:20px;">
-        <div class="section-label">Agent performance</div>
-        <table style="margin-top:10px;">
-          <thead><tr><th>Agent</th><th>Leads handled</th><th>Closed</th><th>Conversion</th></tr></thead>
-          <tbody>
-            ${d.agents.map(a=>`
-              <tr>
-                <td>${esc(a.name)}</td>
-                <td class="mono">${a.handled}</td>
-                <td class="mono">${a.closed}</td>
-                <td class="mono" style="color:var(--valid);">${a.conversion}%</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      </div>
-    `;
-  } else {
-    const d = MONTHLY;
-    const leadPct = Math.min(100, (d.achievedLeads/d.targetLeads)*100);
-    const revPct = Math.min(100, (d.achievedRevenue/d.targetRevenue)*100);
-    content.innerHTML = `
-      <div class="grid-2" style="grid-template-columns:1fr 1fr;">
-        <div class="card" style="padding:16px 18px;">
-          <div class="section-label">Leads: target vs achieved</div>
-          <div class="flex" style="align-items:baseline;gap:8px;margin-top:8px;">
-            <div style="font-family:var(--display);font-weight:700;font-size:26px;">${d.achievedLeads}</div>
-            <div style="font-size:13px;color:var(--ink-soft);">/ ${d.targetLeads} target</div>
-          </div>
-          <div class="progress"><div class="progress-fill" style="width:${leadPct}%;"></div></div>
-        </div>
-        <div class="card" style="padding:16px 18px;">
-          <div class="section-label">Revenue: target vs achieved</div>
-          <div class="flex" style="align-items:baseline;gap:8px;margin-top:8px;">
-            <div style="font-family:var(--display);font-weight:700;font-size:26px;">${inr(d.achievedRevenue)}</div>
-            <div style="font-size:13px;color:var(--ink-soft);">/ ${inr(d.targetRevenue)}</div>
-          </div>
-          <div class="progress"><div class="progress-fill" style="width:${revPct}%;"></div></div>
-        </div>
-      </div>
-      <div style="margin-top:20px;">${metricGrid([{label:"Overall conversion", value:d.conversionPct+"%"}])}</div>
-      <div class="card" style="padding:20px;margin-top:20px;">
-        <div class="section-label">Agent rankings</div>
-        <div style="margin-top:10px;">
-          ${d.rankings.map((r,i)=>`
-            <div class="rank-row">
-              <span class="rank-num">${i+1}</span>
-              <span style="flex:1;">${esc(r.name)}</span>
-              <span class="mono" style="font-weight:600;">${r.closed} closed</span>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-      <div class="card" style="padding:20px;margin-top:20px;">
-        <div class="section-label">Campaign ROI</div>
-        <table style="margin-top:10px;">
-          <thead><tr><th>Campaign</th><th>Spend</th><th>Revenue</th><th>ROI</th></tr></thead>
-          <tbody>
-            ${d.campaignROI.map(c=>`
-              <tr>
-                <td>${esc(c.campaign)}</td>
-                <td class="mono">${inr(c.spend)}</td>
-                <td class="mono">${inr(c.revenue)}</td>
-                <td class="mono" style="color:var(--valid);">${c.roi}%</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      </div>
-    `;
-  }
-}
+const historyRows = [
+  {file:'PRI Calls Sheet', user:'admin@retention', date:'17 Aug 2026', rows:'12,480', status:'Processed'},
+  {file:'InactiveUserCallingReport', user:'admin@retention', date:'17 Aug 2026', rows:'3,102', status:'Processed'},
+  {file:'P2PUserCallingReport', user:'admin@retention', date:'16 Aug 2026', rows:'1,884', status:'Processed'},
+  {file:'Agent Goal/Target Data', user:'admin@retention', date:'01 Aug 2026', rows:'10', status:'Processed'},
+  {file:'Churn Call Report', user:'admin@retention', date:'15 Aug 2026', rows:'960', status:'Processed'}
+];
+document.getElementById('upload-history').innerHTML = historyRows.map(h=>`
+  <tr>
+    <td class="name-cell">${h.file}</td>
+    <td style="font-family:var(--font-body); color:var(--slate)">${h.user}</td>
+    <td>${h.date}</td>
+    <td>${h.rows}</td>
+    <td><span class="pill good">${h.status}</span></td>
+  </tr>
+`).join('');
+
+/* ---------------- INIT ---------------- */
+renderOverview();
+renderTarget();
+renderCallType();
+renderTeamTable();
+document.querySelectorAll('.admin-only').forEach(el=>el.style.display = '');
 </script>
 </body>
 </html>
