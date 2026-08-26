@@ -5,7 +5,8 @@
   <meta charset="utf-8">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"
+    onerror="this.dataset.failed='1'; var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js'; document.head.appendChild(s);"></script>
   <style>
     :root{
       --navy:#0F1E30;
@@ -314,7 +315,8 @@
           '<div class="card-box"><canvas id="agentChart" height="220"></canvas></div>' +
         '</div>';
       document.getElementById('content').innerHTML = html;
-      drawAgentChart(data.byAgent);
+      try { drawAgentChart(data.byAgent); }
+      catch (err) { showChartFallback(err); }
     }
 
     function renderTL(data){
@@ -343,9 +345,18 @@
         '<p>Reserved for the Business Development Team — scope to be added in a future phase.</p></div>';
     }
 
+    function showChartFallback(err){
+      const ctx = document.getElementById('agentChart');
+      if (!ctx || !ctx.parentNode) return;
+      ctx.parentNode.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-soft);font-size:13px;">' +
+        'Chart could not load (' + (err && err.message ? err.message : 'script blocked') + '). ' +
+        'The tables above still have the full data.</div>';
+    }
+
     function drawAgentChart(byAgent){
       const ctx = document.getElementById('agentChart');
       if (!ctx) return;
+      if (typeof Chart === 'undefined') { showChartFallback({ message: 'Chart.js did not load' }); return; }
       if (charts.agent) charts.agent.destroy();
       charts.agent = new Chart(ctx, {
         type: 'bar',
