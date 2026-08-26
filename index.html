@@ -424,6 +424,9 @@
     }
 
     function statusBadge(status) {
+      if (status === 'N/A') {
+        return '<span class="badge" style="background:rgba(139,149,171,0.15);color:var(--muted)">N/A</span>';
+      }
       const cls = status === 'Achieved' ? 'ok' : 'bad';
       return '<span class="badge ' + cls + '">' + status + '</span>';
     }
