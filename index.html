@@ -107,7 +107,7 @@
     <div class="brand"><span class="dot"></span>Retention Ops Dashboard</div>
     <div class="tabs">
       <div class="tab active" data-page="team">Retention Team</div>
-      <div class="tab" data-page="tl">TL Dashboard</div>
+      <div class="tab" data-page="tl">Sales TL Dashboard</div>
       <div class="tab" data-page="bd">Business Development</div>
     </div>
     <div class="range-badge" id="rangeBadge"></div>
@@ -129,7 +129,7 @@
     <div class="field" id="fFromWrap" style="display:none"><label>From</label><input type="date" id="fFrom"></div>
     <div class="field" id="fToWrap" style="display:none"><label>To</label><input type="date" id="fTo"></div>
     <div class="field"><label>Call Type</label><select id="fCallType"><option value="">All</option></select></div>
-    <div class="field"><label>TL</label><select id="fTL"><option value="">All</option></select></div>
+    <div class="field"><label>Sales TL</label><select id="fTL"><option value="">All</option></select></div>
     <div class="field" id="fAgentWrap"><label>Agent</label><select id="fAgent"><option value="">All</option></select></div>
     <button class="btn" id="applyBtn">Apply</button>
     <button class="btn ghost" id="resetBtn">Reset</button>
@@ -235,9 +235,9 @@
       }).catch(showError);
     }
 
-    function pctPill(pct){
-      const cls = pct >= 100 ? 'ok' : (pct >= 75 ? 'warn' : 'bad');
-      return '<span class="pill ' + cls + '">' + pct + '%</span>';
+    function pctPill(pct, target){
+      const cls = pct >= target ? 'ok' : (pct >= target * 0.85 ? 'warn' : 'bad');
+      return '<span class="pill ' + cls + '">' + pct + (typeof pct === 'number' && pct <= 100 && target ? '' : '') + '</span>';
     }
 
     function kpiCard(label, value, sub, cls){
@@ -245,15 +245,26 @@
         '<div class="value">' + value + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
     }
 
+    function kraCard(label, k, unit){
+      const cls = k.met ? 'accent' : 'warn';
+      const valueStr = unit === '%' ? k.metric + '%' : k.metric;
+      const sub = k.met
+        ? 'Target ' + k.target + unit + ' — met'
+        : 'Target ' + k.target + unit + ' — short by ' + k.shortfall + unit;
+      return kpiCard(label, valueStr, sub, cls);
+    }
+
     function teamKpiGrid(t){
       return '<div class="kpi-grid">' +
         kpiCard('Total Calls', t.totalCalls) +
-        kpiCard('Contactable', t.contactableCount, t.contactablePct + '% of unique customers', 'accent') +
+        kpiCard('Contactable', t.contactableCount, t.contactablePct + '% of unique customers') +
         kpiCard('Active', t.activeCount, t.activePct + '% of eligible') +
         kpiCard('Renewal', t.renewalCount, t.renewalPct + '% of eligible') +
-        kpiCard('Target', t.target) +
-        kpiCard('Achievement', t.achievement, t.achievementPct + '%') +
-        kpiCard('Target Shortfall', t.targetShortfall, t.targetShortfall > 0 ? 'below target' : 'target met', t.targetShortfall > 0 ? 'warn' : '') +
+        '</div>' +
+        '<div class="kpi-grid" style="margin-top:12px;">' +
+        kraCard('KRA — Contactability', t.kra.contactability, '%') +
+        kraCard('KRA — Customer Retention (' + (t.kra.retention.basis) + ')', t.kra.retention, '%') +
+        kraCard('KRA — Call Management', t.kra.callManagement, ' calls/day') +
         '</div>';
     }
 
@@ -261,19 +272,17 @@
       let rows = '';
       Object.keys(byCallType).forEach(function(ct){
         const r = byCallType[ct];
-        rows += '<tr><td>' + ct + '</td><td class="num">' + r.totalCalls + '</td>' +
+        rows += '<tr><td>' + ct + '</td>' +
           '<td class="num">' + r.uniqueCustomers + '</td>' +
           '<td class="num">' + r.contactableCount + '</td><td class="num">' + r.contactablePct + '%</td>' +
           '<td class="num">' + r.activeCount + '</td><td class="num">' + r.activePct + '%</td>' +
-          '<td class="num">' + r.renewalCount + '</td><td class="num">' + r.renewalPct + '%</td>' +
-          '<td class="num">' + r.target + '</td><td class="num">' + r.achievement + '</td>' +
-          '<td class="num">' + pctPill(r.achievementPct) + '</td>' +
-          '<td class="num">' + r.targetShortfall + '</td></tr>';
+          '<td class="num">' + r.renewalCount + '</td><td class="num">' + r.renewalPct + '%</td></tr>';
       });
-      return '<table><thead><tr><th>Call Type</th><th>Total Calls</th><th>Unique</th>' +
+      return '<table><thead><tr><th>Call Type</th><th>Unique</th>' +
         '<th>Contactable</th><th>Cont. %</th><th>Active</th><th>Active %</th>' +
-        '<th>Renewal</th><th>Renewal %</th><th>Target</th><th>Achv.</th><th>Achv. %</th><th>Shortfall</th></tr></thead>' +
-        '<tbody>' + rows + '</tbody></table>';
+        '<th>Renewal</th><th>Renewal %</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>' +
+        '<p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Total Calls and the Call Management KRA aren\'t split by call type — the source sheet records calls per agent/month only, not per call type.</p>';
     }
 
     function agentTable(byAgent, drillable){
@@ -284,13 +293,12 @@
           '<td class="num">' + a.contactableCount + '</td><td class="num">' + a.contactablePct + '%</td>' +
           '<td class="num">' + a.activeCount + '</td><td class="num">' + a.activePct + '%</td>' +
           '<td class="num">' + a.renewalCount + '</td><td class="num">' + a.renewalPct + '%</td>' +
-          '<td class="num">' + a.target + '</td><td class="num">' + a.achievement + '</td>' +
-          '<td class="num">' + pctPill(a.achievementPct) + '</td>' +
-          '<td class="num">' + a.targetShortfall + '</td></tr>';
+          '<td class="num">' + a.avgCallsPerAgentPerDay + '</td>' +
+          '<td class="num">' + (a.kra.callManagement.met ? '<span class="pill ok">Met</span>' : '<span class="pill bad">Short ' + a.kra.callManagement.shortfall + '</span>') + '</td></tr>';
       });
       return '<table><thead><tr><th>Agent</th><th>Total Calls</th>' +
         '<th>Contactable</th><th>Cont. %</th><th>Active</th><th>Active %</th>' +
-        '<th>Renewal</th><th>Renewal %</th><th>Target</th><th>Achv.</th><th>Achv. %</th><th>Shortfall</th></tr></thead>' +
+        '<th>Renewal</th><th>Renewal %</th><th>Calls/Day</th><th>Call KRA</th></tr></thead>' +
         '<tbody>' + rows + '</tbody></table>';
     }
 
@@ -311,7 +319,7 @@
 
     function renderTL(data){
       const html =
-        '<div class="section-title">TL Roll-Up' + (state.filters.tl ? ' — ' + state.filters.tl : ' (select a TL above)') + '<div class="rule"></div></div>' +
+        '<div class="section-title">Sales TL Roll-Up' + (state.filters.tl ? ' — ' + state.filters.tl : ' (select a Sales TL above)') + '<div class="rule"></div></div>' +
         teamKpiGrid(data.team) +
         '<div class="kpi-grid" style="margin-top:8px;">' + kpiCard('Agents in Team', data.byAgent.length) + '</div>' +
         '<div class="section-title">Call-Type-Wise Performance<div class="rule"></div></div>' +
@@ -344,8 +352,8 @@
         data: {
           labels: byAgent.map(a => a.agent),
           datasets: [
-            { label: 'Achievement', data: byAgent.map(a => a.achievement), backgroundColor: '#1FA6A0' },
-            { label: 'Target', data: byAgent.map(a => a.target), backgroundColor: '#0F1E30' }
+            { label: 'Calls/Day', data: byAgent.map(a => a.avgCallsPerAgentPerDay), backgroundColor: '#1FA6A0' },
+            { label: 'Calls/Day Target', data: byAgent.map(a => a.kra.callManagement.target), backgroundColor: '#0F1E30' }
           ]
         },
         options: {
