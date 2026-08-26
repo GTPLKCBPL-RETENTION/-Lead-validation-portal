@@ -2,380 +2,572 @@
 <html>
 <head>
   <base target="_top">
-  <meta charset="utf-8">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"
-    onerror="this.dataset.failed='1'; var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js'; document.head.appendChild(s);"></script>
+  <meta charset="UTF-8">
+  <title>Retention Team Dashboard</title>
   <style>
-    :root{
-      --navy:#0F1E30;
-      --navy-2:#152A42;
-      --teal:#1FA6A0;
-      --teal-dim:#1fa6a01a;
-      --amber:#E8A33D;
-      --red:#D65A5A;
-      --bg:#F5F7FA;
-      --card:#FFFFFF;
-      --line:#E4E9EF;
-      --ink:#0F1E30;
-      --ink-soft:#5A6B7D;
-      --radius:12px;
+    :root {
+      --bg: #0f1420;
+      --panel: #161d2e;
+      --panel2: #1c2438;
+      --border: #2a3348;
+      --text: #e8ecf5;
+      --muted: #8b95ab;
+      --accent: #4f8cff;
+      --green: #2ecc8f;
+      --red: #ff5d6c;
+      --amber: #ffb84f;
+      --radius: 14px;
     }
-    *{box-sizing:border-box;}
-    body{
-      margin:0; background:var(--bg); color:var(--ink);
-      font-family:'Inter',system-ui,sans-serif; font-size:14px;
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
     }
-    h1,h2,h3,.brand{font-family:'Space Grotesk',system-ui,sans-serif;}
-
-    /* ---- Top bar ---- */
-    .topbar{
-      background:var(--navy); color:#fff; padding:16px 24px;
-      display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
     }
-    .brand{font-size:18px; font-weight:700; display:flex; align-items:center; gap:10px;}
-    .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--teal);}
-    .tabs{display:flex; gap:4px; background:var(--navy-2); padding:4px; border-radius:10px;}
-    .tab{
-      padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px;
-      color:#B9C6D6; transition:.15s;
+    .topbar h1 {
+      font-size: 20px;
+      margin: 0;
+      font-weight: 700;
     }
-    .tab.active{background:var(--teal); color:#052422;}
-    .tab:not(.active):hover{color:#fff;}
-    .range-badge{font-size:12px; color:#9FB1C4;}
-
-    /* ---- Filter bar ---- */
-    .filterbar{
-      display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;
-      padding:16px 24px; background:var(--card); border-bottom:1px solid var(--line);
+    .topbar .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 2px;
     }
-    .field{display:flex; flex-direction:column; gap:4px;}
-    .field label{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); font-weight:600;}
-    select, input[type=date]{
-      padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13px;
-      background:#fff; color:var(--ink); min-width:130px;
+    .tabs {
+      display: flex;
+      gap: 6px;
+      padding: 10px 24px 0;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
     }
-    .btn{
-      padding:9px 18px; border-radius:8px; border:none; background:var(--navy);
-      color:#fff; font-weight:600; font-size:13px; cursor:pointer;
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-weight: 600;
     }
-    .btn:hover{background:var(--navy-2);}
-    .btn.ghost{background:transparent; color:var(--navy); border:1px solid var(--line);}
-
-    /* ---- Content ---- */
-    .content{padding:24px; max-width:1300px; margin:0 auto;}
-    .section-title{font-size:15px; font-weight:700; margin:28px 0 12px; display:flex; align-items:center; gap:8px;}
-    .section-title .rule{flex:1; height:1px; background:var(--line);}
-
-    .kpi-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px;}
-    .kpi-card{
-      background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-      padding:14px 16px;
+    .tab-btn.active {
+      color: var(--text);
+      border-bottom: 2px solid var(--accent);
     }
-    .kpi-card .label{font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); font-weight:600;}
-    .kpi-card .value{font-size:24px; font-weight:700; margin-top:6px; font-family:'Space Grotesk',sans-serif;}
-    .kpi-card .sub{font-size:12px; color:var(--ink-soft); margin-top:2px;}
-    .kpi-card.accent{border-color:var(--teal); background:linear-gradient(180deg,#fff,var(--teal-dim));}
-    .kpi-card.warn .value{color:var(--red);}
-
-    table{width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;}
-    th,td{padding:10px 12px; text-align:left; font-size:13px; border-bottom:1px solid var(--line);}
-    th{background:#FAFBFC; color:var(--ink-soft); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em;}
-    tr:last-child td{border-bottom:none;}
-    td.num{text-align:right; font-variant-numeric:tabular-nums;}
-    .pill{display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700;}
-    .pill.ok{background:#E6F7EF; color:#1E9C5C;}
-    .pill.warn{background:#FDEFDD; color:#B0731A;}
-    .pill.bad{background:#FBE9E9; color:#C0392B;}
-
-    .grid-2{display:grid; grid-template-columns:1.3fr 1fr; gap:20px;}
-    @media(max-width:900px){.grid-2{grid-template-columns:1fr;}}
-    .card-box{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px;}
-
-    .placeholder{
-      text-align:center; padding:80px 20px; color:var(--ink-soft);
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 16px 24px;
+      background: var(--panel);
+      align-items: center;
+      border-bottom: 1px solid var(--border);
     }
-    .placeholder .big{font-size:40px;}
-    .loading{padding:40px; text-align:center; color:var(--ink-soft);}
-    .drill{cursor:pointer; color:var(--teal); font-weight:600;}
-    .drill:hover{text-decoration:underline;}
+    .filters select, .filters input {
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .filters label {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .filters button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+      align-self: flex-end;
+    }
+    .filters button.secondary {
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .content {
+      padding: 20px 24px 60px;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+    }
+    .kpi-card .label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    .kpi-card .value {
+      font-size: 26px;
+      font-weight: 700;
+    }
+    .kpi-card .value.green { color: var(--green); }
+    .kpi-card .value.red { color: var(--red); }
+    .kpi-card .value.amber { color: var(--amber); }
+    .kpi-card .foot {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 30px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title .note {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border-radius: var(--radius);
+      overflow: hidden;
+      font-size: 13px;
+    }
+    thead th {
+      background: var(--panel2);
+      color: var(--muted);
+      text-align: left;
+      padding: 10px 12px;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+    .badge {
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge.ok { background: rgba(46,204,143,0.15); color: var(--green); }
+    .badge.bad { background: rgba(255,93,108,0.15); color: var(--red); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+    table { border: none; border-radius: 0; }
+    .loading, .error-box {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .error-box { color: var(--red); }
+    .hint {
+      background: rgba(79,140,255,0.08);
+      border: 1px solid rgba(79,140,255,0.3);
+      color: #9dbdff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      margin-bottom: 18px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    .pill-row { display:flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;}
+    .pill {
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--muted);
+    }
   </style>
 </head>
 <body>
 
   <div class="topbar">
-    <div class="brand"><span class="dot"></span>Retention Ops Dashboard</div>
-    <div class="tabs">
-      <div class="tab active" data-page="team">Retention Team</div>
-      <div class="tab" data-page="tl">Sales TL Dashboard</div>
-      <div class="tab" data-page="bd">Business Development</div>
+    <div>
+      <h1>Retention Team Dashboard</h1>
+      <div class="sub">1 Team Leader + 5 Agents · Live from Google Sheets</div>
     </div>
-    <div class="range-badge" id="rangeBadge"></div>
   </div>
 
-  <div class="filterbar" id="filterbar">
-    <div class="field">
-      <label>Period</label>
-      <select id="fPeriod">
-        <option value="daily">Daily</option>
-        <option value="tillDate" selected>Till Date</option>
-        <option value="quarterly">Quarterly</option>
-        <option value="halfYearly">Half Yearly</option>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="agent">Agent-wise</button>
+    <button class="tab-btn" data-tab="kpi">Agent Goal / KPI</button>
+    <button class="tab-btn" data-tab="calltype">Call-Type-wise</button>
+    <button class="tab-btn" data-tab="daily">Daily / Date-wise</button>
+  </div>
+
+  <div class="filters">
+    <label>Reporting Period
+      <select id="f-period">
+        <option value="all">All / No filter</option>
+        <option value="date">Specific Date</option>
+        <option value="dateRange">Date Range</option>
+        <option value="month">Monthly</option>
+        <option value="tillDate">Till Date</option>
+        <option value="quarter">Quarterly</option>
+        <option value="half">Half-Yearly</option>
         <option value="annual">Annual</option>
-        <option value="custom">Custom Range</option>
       </select>
-    </div>
-    <div class="field" id="fDateWrap"><label>Date</label><input type="date" id="fDate"></div>
-    <div class="field" id="fFromWrap" style="display:none"><label>From</label><input type="date" id="fFrom"></div>
-    <div class="field" id="fToWrap" style="display:none"><label>To</label><input type="date" id="fTo"></div>
-    <div class="field"><label>Call Type</label><select id="fCallType"><option value="">All</option></select></div>
-    <div class="field"><label>Sales TL</label><select id="fTL"><option value="">All</option></select></div>
-    <div class="field" id="fAgentWrap"><label>Agent</label><select id="fAgent"><option value="">All</option></select></div>
-    <button class="btn" id="applyBtn">Apply</button>
-    <button class="btn ghost" id="resetBtn">Reset</button>
+    </label>
+    <label>Year
+      <select id="f-year"><option value="">All</option></select>
+    </label>
+    <label id="wrap-month">Month
+      <select id="f-month"><option value="">All</option></select>
+    </label>
+    <label id="wrap-date" style="display:none">Date
+      <input type="date" id="f-date">
+    </label>
+    <label id="wrap-startdate" style="display:none">Start Date
+      <input type="date" id="f-startdate">
+    </label>
+    <label id="wrap-enddate" style="display:none">End Date
+      <input type="date" id="f-enddate">
+    </label>
+    <label id="wrap-quarter" style="display:none">Quarter
+      <select id="f-quarter">
+        <option value="1">Q1 (Jan-Mar)</option>
+        <option value="2">Q2 (Apr-Jun)</option>
+        <option value="3">Q3 (Jul-Sep)</option>
+        <option value="4">Q4 (Oct-Dec)</option>
+      </select>
+    </label>
+    <label id="wrap-half" style="display:none">Half
+      <select id="f-half">
+        <option value="1">H1 (Jan-Jun)</option>
+        <option value="2">H2 (Jul-Dec)</option>
+      </select>
+    </label>
+    <label>Agent
+      <select id="f-agent"><option value="">All Agents</option></select>
+    </label>
+    <label>Call Type
+      <select id="f-calltype">
+        <option value="">All</option>
+        <option value="Inactive">Inactive</option>
+        <option value="Upcoming">Upcoming</option>
+        <option value="Suspended">Suspended</option>
+      </select>
+    </label>
+    <button onclick="applyFilters()">Apply Filters</button>
+    <button class="secondary" onclick="resetFilters()">Reset</button>
   </div>
 
   <div class="content" id="content">
-    <div class="loading">Loading dashboard…</div>
+    <div class="loading">Loading dashboard data…</div>
   </div>
 
   <script>
-    // Apps Script web app deployment this page calls for data.
-    // Update this if you redeploy and get a new /exec URL.
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxbUo0_qaHUeePTdJGwAHGlLFiGUuboHEPKbnKv8Rf9nyPZ3B7YE0H8AYPoDAOgHqJ4Xw/exec';
+    let dashboardData = null;
+    let currentTab = 'overview';
 
-    function callApi(action, filters) {
-      const params = new URLSearchParams({ action: action });
-      if (filters) params.set('filters', JSON.stringify(filters));
-      return fetch(API_URL + '?' + params.toString())
-        .then(function (res) {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.json();
-        })
-        .then(function (body) {
-          if (!body.ok) throw new Error(body.error || 'Unknown API error');
-          return body.data;
-        });
-    }
-
-    const state = { page: 'team', filters: { period: 'tillDate', agent: '', tl: '', callType: '' } };
-    let charts = {};
-
-    document.querySelectorAll('.tab').forEach(function(t){
-      t.addEventListener('click', function(){
-        document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-        t.classList.add('active');
-        state.page = t.dataset.page;
-        document.getElementById('fAgentWrap').style.display = (state.page === 'bd') ? 'none' : 'flex';
-        state.filters.tl = ''; state.filters.agent = '';
-        document.getElementById('fTL').value = ''; document.getElementById('fAgent').value = '';
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTab = btn.dataset.tab;
         render();
       });
     });
 
-    document.getElementById('fPeriod').addEventListener('change', function(e){
+    document.getElementById('f-period').addEventListener('change', (e) => {
       const p = e.target.value;
-      document.getElementById('fDateWrap').style.display = (p === 'daily') ? 'flex' : 'none';
-      document.getElementById('fFromWrap').style.display = (p === 'custom') ? 'flex' : 'none';
-      document.getElementById('fToWrap').style.display = (p === 'custom') ? 'flex' : 'none';
+      document.getElementById('wrap-date').style.display = (p === 'date') ? 'flex' : 'none';
+      document.getElementById('wrap-startdate').style.display = (p === 'dateRange') ? 'flex' : 'none';
+      document.getElementById('wrap-enddate').style.display = (p === 'dateRange') ? 'flex' : 'none';
+      document.getElementById('wrap-quarter').style.display = (p === 'quarter') ? 'flex' : 'none';
+      document.getElementById('wrap-half').style.display = (p === 'half') ? 'flex' : 'none';
+      document.getElementById('wrap-month').style.display = (p === 'month' || p === 'tillDate') ? 'flex' : 'none';
     });
 
-    document.getElementById('applyBtn').addEventListener('click', function(){
-      state.filters.period = document.getElementById('fPeriod').value;
-      state.filters.date = document.getElementById('fDate').value;
-      state.filters.dateFrom = document.getElementById('fFrom').value;
-      state.filters.dateTo = document.getElementById('fTo').value;
-      state.filters.callType = document.getElementById('fCallType').value;
-      state.filters.tl = document.getElementById('fTL').value;
-      state.filters.agent = document.getElementById('fAgent').value;
-      render();
-    });
-
-    document.getElementById('resetBtn').addEventListener('click', function(){
-      document.getElementById('fPeriod').value = 'tillDate';
-      document.getElementById('fCallType').value = '';
-      document.getElementById('fTL').value = '';
-      document.getElementById('fAgent').value = '';
-      state.filters = { period: 'tillDate', agent: '', tl: '', callType: '' };
-      render();
-    });
-
-    function init(){
-      callApi('getFilterOptions').then(function(opts){
-        const ctSel = document.getElementById('fCallType');
-        opts.callTypes.forEach(function(ct){
-          const o = document.createElement('option'); o.value = ct; o.textContent = ct; ctSel.appendChild(o);
+    function loadFilterOptions() {
+      google.script.run.withSuccessHandler(opts => {
+        if (!opts.success) return;
+        const yearSel = document.getElementById('f-year');
+        opts.years.forEach(y => {
+          const o = document.createElement('option');
+          o.value = y; o.textContent = y;
+          yearSel.appendChild(o);
         });
-        const tlSel = document.getElementById('fTL');
-        opts.tls.forEach(function(tl){
-          const o = document.createElement('option'); o.value = tl; o.textContent = tl; tlSel.appendChild(o);
+        const monthSel = document.getElementById('f-month');
+        opts.months.forEach(m => {
+          const o = document.createElement('option');
+          o.value = m; o.textContent = m;
+          monthSel.appendChild(o);
         });
-        const agSel = document.getElementById('fAgent');
-        opts.agents.forEach(function(a){
-          const o = document.createElement('option'); o.value = a; o.textContent = a; agSel.appendChild(o);
+        const agentSel = document.getElementById('f-agent');
+        opts.agents.forEach(a => {
+          const o = document.createElement('option');
+          o.value = a; o.textContent = a;
+          agentSel.appendChild(o);
         });
-        render();
-      }).catch(showError);
+      }).getFilterOptions();
     }
 
-    function showError(err){
-      document.getElementById('content').innerHTML =
-        '<div class="placeholder"><div class="big">⚠️</div><h3>Could not load data</h3>' +
-        '<p>' + (err && err.message ? err.message : err) + '</p>' +
-        '<p>Check that the column names in CONFIG (Code.gs) match your sheet headers exactly.</p></div>';
+    function buildFilterPayload() {
+      const period = document.getElementById('f-period').value;
+      const filters = {
+        periodType: period === 'all' ? '' : period,
+        year: document.getElementById('f-year').value,
+        month: document.getElementById('f-month').value,
+        date: document.getElementById('f-date').value,
+        startDate: document.getElementById('f-startdate').value,
+        endDate: document.getElementById('f-enddate').value,
+        quarter: document.getElementById('f-quarter').value,
+        half: document.getElementById('f-half').value,
+        agent: document.getElementById('f-agent').value,
+        callType: document.getElementById('f-calltype').value
+      };
+      return filters;
     }
 
-    function render(){
-      if (state.page === 'bd') { renderBD(); return; }
-      document.getElementById('content').innerHTML = '<div class="loading">Crunching numbers…</div>';
-      const action = state.page === 'tl' ? 'getTLDashboardData' : 'getDashboardData';
-      callApi(action, state.filters).then(function(data){
-        document.getElementById('rangeBadge').textContent = data.range.from + '  →  ' + data.range.to;
-        if (state.page === 'team') renderTeam(data); else renderTL(data);
-      }).catch(showError);
+    function applyFilters() {
+      loadData(buildFilterPayload());
     }
 
-    function pctPill(pct, target){
-      const cls = pct >= target ? 'ok' : (pct >= target * 0.85 ? 'warn' : 'bad');
-      return '<span class="pill ' + cls + '">' + pct + (typeof pct === 'number' && pct <= 100 && target ? '' : '') + '</span>';
+    function resetFilters() {
+      document.getElementById('f-period').value = 'all';
+      document.getElementById('f-year').value = '';
+      document.getElementById('f-month').value = '';
+      document.getElementById('f-date').value = '';
+      document.getElementById('f-startdate').value = '';
+      document.getElementById('f-enddate').value = '';
+      document.getElementById('f-agent').value = '';
+      document.getElementById('f-calltype').value = '';
+      document.getElementById('f-period').dispatchEvent(new Event('change'));
+      loadData({});
     }
 
-    function kpiCard(label, value, sub, cls){
-      return '<div class="kpi-card ' + (cls||'') + '"><div class="label">' + label + '</div>' +
-        '<div class="value">' + value + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
-    }
-
-    function kraCard(label, k, unit){
-      const cls = k.met ? 'accent' : 'warn';
-      const valueStr = unit === '%' ? k.metric + '%' : k.metric;
-      const sub = k.met
-        ? 'Target ' + k.target + unit + ' — met'
-        : 'Target ' + k.target + unit + ' — short by ' + k.shortfall + unit;
-      return kpiCard(label, valueStr, sub, cls);
-    }
-
-    function teamKpiGrid(t){
-      return '<div class="kpi-grid">' +
-        kpiCard('Total Calls', t.totalCalls) +
-        kpiCard('Contactable', t.contactableCount, t.contactablePct + '% of unique customers') +
-        kpiCard('Active', t.activeCount, t.activePct + '% of eligible') +
-        kpiCard('Renewal', t.renewalCount, t.renewalPct + '% of eligible') +
-        '</div>' +
-        '<div class="kpi-grid" style="margin-top:12px;">' +
-        kraCard('KRA — Contactability', t.kra.contactability, '%') +
-        kraCard('KRA — Customer Retention (' + (t.kra.retention.basis) + ')', t.kra.retention, '%') +
-        kraCard('KRA — Call Management', t.kra.callManagement, ' calls/day') +
-        '</div>';
-    }
-
-    function callTypeTable(byCallType){
-      let rows = '';
-      Object.keys(byCallType).forEach(function(ct){
-        const r = byCallType[ct];
-        rows += '<tr><td>' + ct + '</td>' +
-          '<td class="num">' + r.uniqueCustomers + '</td>' +
-          '<td class="num">' + r.contactableCount + '</td><td class="num">' + r.contactablePct + '%</td>' +
-          '<td class="num">' + r.activeCount + '</td><td class="num">' + r.activePct + '%</td>' +
-          '<td class="num">' + r.renewalCount + '</td><td class="num">' + r.renewalPct + '%</td></tr>';
-      });
-      return '<table><thead><tr><th>Call Type</th><th>Unique</th>' +
-        '<th>Contactable</th><th>Cont. %</th><th>Active</th><th>Active %</th>' +
-        '<th>Renewal</th><th>Renewal %</th></tr></thead>' +
-        '<tbody>' + rows + '</tbody></table>' +
-        '<p style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Total Calls and the Call Management KRA aren\'t split by call type — the source sheet records calls per agent/month only, not per call type.</p>';
-    }
-
-    function agentTable(byAgent, drillable){
-      let rows = '';
-      byAgent.forEach(function(a){
-        rows += '<tr><td>' + (drillable ? '<span class="drill" data-agent="' + a.agent + '">' + a.agent + '</span>' : a.agent) + '</td>' +
-          '<td class="num">' + a.totalCalls + '</td>' +
-          '<td class="num">' + a.contactableCount + '</td><td class="num">' + a.contactablePct + '%</td>' +
-          '<td class="num">' + a.activeCount + '</td><td class="num">' + a.activePct + '%</td>' +
-          '<td class="num">' + a.renewalCount + '</td><td class="num">' + a.renewalPct + '%</td>' +
-          '<td class="num">' + a.avgCallsPerAgentPerDay + '</td>' +
-          '<td class="num">' + (a.kra.callManagement.met ? '<span class="pill ok">Met</span>' : '<span class="pill bad">Short ' + a.kra.callManagement.shortfall + '</span>') + '</td></tr>';
-      });
-      return '<table><thead><tr><th>Agent</th><th>Total Calls</th>' +
-        '<th>Contactable</th><th>Cont. %</th><th>Active</th><th>Active %</th>' +
-        '<th>Renewal</th><th>Renewal %</th><th>Calls/Day</th><th>Call KRA</th></tr></thead>' +
-        '<tbody>' + rows + '</tbody></table>';
-    }
-
-    function renderTeam(data){
-      const html =
-        '<div class="section-title">Retention Team Overview<div class="rule"></div></div>' +
-        teamKpiGrid(data.team) +
-        '<div class="section-title">Call-Type-Wise Performance<div class="rule"></div></div>' +
-        callTypeTable(data.byCallType) +
-        '<div class="section-title">Agent-Wise Performance<div class="rule"></div></div>' +
-        '<div class="grid-2">' +
-          '<div class="card-box">' + agentTable(data.byAgent, false) + '</div>' +
-          '<div class="card-box"><canvas id="agentChart" height="220"></canvas></div>' +
-        '</div>';
-      document.getElementById('content').innerHTML = html;
-      try { drawAgentChart(data.byAgent); }
-      catch (err) { showChartFallback(err); }
-    }
-
-    function renderTL(data){
-      const html =
-        '<div class="section-title">Sales TL Roll-Up' + (state.filters.tl ? ' — ' + state.filters.tl : ' (select a Sales TL above)') + '<div class="rule"></div></div>' +
-        teamKpiGrid(data.team) +
-        '<div class="kpi-grid" style="margin-top:8px;">' + kpiCard('Agents in Team', data.byAgent.length) + '</div>' +
-        '<div class="section-title">Call-Type-Wise Performance<div class="rule"></div></div>' +
-        callTypeTable(data.byCallType) +
-        '<div class="section-title">Agent Drill-Down<div class="rule"></div></div>' +
-        '<div class="card-box">' + agentTable(data.byAgent, true) + '</div>';
-      document.getElementById('content').innerHTML = html;
-      document.querySelectorAll('.drill').forEach(function(el){
-        el.addEventListener('click', function(){
-          document.getElementById('fAgent').value = el.dataset.agent;
-          state.filters.agent = el.dataset.agent;
+    function loadData(filters) {
+      document.getElementById('content').innerHTML = '<div class="loading">Loading dashboard data…</div>';
+      google.script.run
+        .withSuccessHandler(data => {
+          if (!data.success) {
+            document.getElementById('content').innerHTML =
+              '<div class="error-box">Error loading data: ' + data.error + '</div>';
+            return;
+          }
+          dashboardData = data;
           render();
-        });
-      });
+        })
+        .withFailureHandler(err => {
+          document.getElementById('content').innerHTML =
+            '<div class="error-box">Failed: ' + err.message + '</div>';
+        })
+        .getDashboardData(filters);
     }
 
-    function renderBD(){
-      document.getElementById('content').innerHTML =
-        '<div class="placeholder"><div class="big">🚧</div>' +
-        '<h3>Business Development Dashboard</h3>' +
-        '<p>Reserved for the Business Development Team — scope to be added in a future phase.</p></div>';
+    function statusBadge(status) {
+      const cls = status === 'Achieved' ? 'ok' : 'bad';
+      return '<span class="badge ' + cls + '">' + status + '</span>';
     }
 
-    function showChartFallback(err){
-      const ctx = document.getElementById('agentChart');
-      if (!ctx || !ctx.parentNode) return;
-      ctx.parentNode.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-soft);font-size:13px;">' +
-        'Chart could not load (' + (err && err.message ? err.message : 'script blocked') + '). ' +
-        'The tables above still have the full data.</div>';
+    function render() {
+      if (!dashboardData) return;
+      const c = document.getElementById('content');
+      if (currentTab === 'overview') c.innerHTML = renderOverview();
+      else if (currentTab === 'agent') c.innerHTML = renderAgentWise();
+      else if (currentTab === 'kpi') c.innerHTML = renderKpi();
+      else if (currentTab === 'calltype') c.innerHTML = renderCallType();
+      else if (currentTab === 'daily') c.innerHTML = renderDaily();
     }
 
-    function drawAgentChart(byAgent){
-      const ctx = document.getElementById('agentChart');
-      if (!ctx) return;
-      if (typeof Chart === 'undefined') { showChartFallback({ message: 'Chart.js did not load' }); return; }
-      if (charts.agent) charts.agent.destroy();
-      charts.agent = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: byAgent.map(a => a.agent),
-          datasets: [
-            { label: 'Calls/Day', data: byAgent.map(a => a.avgCallsPerAgentPerDay), backgroundColor: '#1FA6A0' },
-            { label: 'Calls/Day Target', data: byAgent.map(a => a.kra.callManagement.target), backgroundColor: '#0F1E30' }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'bottom' } },
-          scales: { y: { beginAtZero: true } }
-        }
-      });
+    function renderOverview() {
+      const o = dashboardData.overview;
+      return `
+        <div class="hint">PRI-wise Call Count (total attempts) is always shown separately from Call Sheet-wise Unique Customer Count — they are never combined.</div>
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="label">Total Call Attempts (PRI-wise)</div>
+            <div class="value">${o.priCallCount}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">Total Unique Customers Called</div>
+            <div class="value">${o.uniqueCustomers}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">Contactable Customers</div>
+            <div class="value">${o.contactableCount}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">Contactable %</div>
+            <div class="value ${o.contactablePct >= 55 ? 'green' : 'red'}">${o.contactablePct}%</div>
+            <div class="foot">Target ≥55%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">Active Customers</div>
+            <div class="value">${o.activeCount}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">Active %</div>
+            <div class="value ${o.activePct >= 55 ? 'green' : 'red'}">${o.activePct}%</div>
+            <div class="foot">Target ≥55%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">Call Mgmt Target</div>
+            <div class="value">${o.callManagementTarget}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">Call Mgmt Achievement</div>
+            <div class="value ${o.callManagementAchievement >= o.callManagementTarget ? 'green':'amber'}">${o.callManagementAchievement}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">Call Mgmt Target Shortfall</div>
+            <div class="value ${o.callManagementShortfall > 0 ? 'red':'green'}">${o.callManagementShortfall}</div>
+          </div>
+          <div class="kpi-card">
+            <div class="label">LBO Shifted to Other ISP</div>
+            <div class="value amber">${o.lboShiftedCount}</div>
+            <div class="foot">Neutral — excluded from Active/Inactive</div>
+          </div>
+        </div>
+      `;
     }
 
-    init();
+    function renderAgentWise() {
+      const rows = dashboardData.agentWise.map(a => `
+        <tr>
+          <td>${a.agent}</td>
+          <td>${a.priCallCount}</td>
+          <td>${a.uniqueCustomers}</td>
+          <td>${a.contactableCount}</td>
+          <td>${a.contactablePct}%</td>
+          <td>${a.activeCount}</td>
+          <td>${a.activePct}%</td>
+          <td>${a.callTarget}</td>
+          <td>${a.callAchievement}</td>
+          <td>${a.targetShortfall}</td>
+          <td>${statusBadge(a.callStatus)}</td>
+        </tr>
+      `).join('');
+      return `
+        <div class="section-title">Agent-wise Performance <span class="note">PRI-wise Call Count ≠ Unique Customer Count</span></div>
+        <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Agent</th><th>PRI Call Count</th><th>Unique Customers</th>
+            <th>Contactable</th><th>Contactable %</th><th>Active</th><th>Active %</th>
+            <th>Call Target</th><th>Achievement</th><th>Shortfall</th><th>Status</th>
+          </tr></thead>
+          <tbody>${rows || '<tr><td colspan="11">No data for selected filters</td></tr>'}</tbody>
+        </table>
+        </div>
+      `;
+    }
+
+    function renderKpi() {
+      const rows = dashboardData.kpiPerformance.map(k => `
+        <tr>
+          <td>${k.kra}</td>
+          <td>${k.target}</td>
+          <td>${k.achievement}</td>
+          <td>${k.shortfall}</td>
+          <td>${statusBadge(k.status)}</td>
+        </tr>
+      `).join('');
+      return `
+        <div class="section-title">Agent Goal / KPI Performance</div>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>KRA</th><th>Target</th><th>Achievement</th><th>Shortfall</th><th>Status</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        </div>
+      `;
+    }
+
+    function renderCallType() {
+      const rows = dashboardData.callTypeWise.map(ct => `
+        <tr>
+          <td>${ct.callType}</td>
+          <td>${ct.uniqueCustomers}</td>
+          <td>${ct.contactableCount}</td>
+          <td>${ct.contactablePct}%</td>
+          <td>${ct.activeCount}</td>
+          <td>${ct.activePct}%</td>
+        </tr>
+      `).join('');
+      return `
+        <div class="section-title">Call-Type-wise Performance</div>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Call Type</th><th>Unique Customers</th><th>Contactable</th><th>Contactable %</th><th>Active</th><th>Active %</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="6">No data</td></tr>'}</tbody>
+        </table>
+        </div>
+      `;
+    }
+
+    function renderDaily() {
+      const rows = dashboardData.dailyPerformance.map(d => `
+        <tr>
+          <td>${d.date}</td>
+          <td>${d.uniqueCustomers}</td>
+          <td>${d.contactableCount}</td>
+          <td>${d.contactablePct}%</td>
+          <td>${d.activeCount}</td>
+          <td>${d.activePct}%</td>
+        </tr>
+      `).join('');
+      return `
+        <div class="section-title">Daily / Date-wise Performance</div>
+        <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Unique Customers</th><th>Contactable</th><th>Contactable %</th><th>Active</th><th>Active %</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="6">No date-stamped data for this range</td></tr>'}</tbody>
+        </table>
+        </div>
+      `;
+    }
+
+    // init
+    loadFilterOptions();
+    loadData({});
   </script>
 </body>
 </html>
