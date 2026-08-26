@@ -303,8 +303,27 @@
   </div>
 
   <script>
+    // ---- CONFIG ----
+    // Your deployed Apps Script Web App URL (must end in /exec)
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbykWLh7a3LmuTZJMjw6ZJZLgxPz1jvwSBnY23CO9zl9WLcaO9g_sqZ_a7UFiZUuHZ4AAg/exec";
+
     let dashboardData = null;
     let currentTab = 'overview';
+
+    function callAppsScript(action, params) {
+      params = params || {};
+      const url = new URL(APPS_SCRIPT_URL);
+      url.searchParams.set('action', action);
+      Object.keys(params).forEach(k => {
+        if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+          url.searchParams.set(k, params[k]);
+        }
+      });
+      return fetch(url.toString()).then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      });
+    }
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -326,7 +345,7 @@
     });
 
     function loadFilterOptions() {
-      google.script.run.withSuccessHandler(opts => {
+      callAppsScript('getFilterOptions').then(opts => {
         if (!opts.success) return;
         const yearSel = document.getElementById('f-year');
         opts.years.forEach(y => {
@@ -346,7 +365,9 @@
           o.value = a; o.textContent = a;
           agentSel.appendChild(o);
         });
-      }).getFilterOptions();
+      }).catch(err => {
+        console.error('Failed to load filter options', err);
+      });
     }
 
     function buildFilterPayload() {
@@ -385,8 +406,8 @@
 
     function loadData(filters) {
       document.getElementById('content').innerHTML = '<div class="loading">Loading dashboard data…</div>';
-      google.script.run
-        .withSuccessHandler(data => {
+      callAppsScript('getDashboardData', filters)
+        .then(data => {
           if (!data.success) {
             document.getElementById('content').innerHTML =
               '<div class="error-box">Error loading data: ' + data.error + '</div>';
@@ -395,11 +416,11 @@
           dashboardData = data;
           render();
         })
-        .withFailureHandler(err => {
+        .catch(err => {
           document.getElementById('content').innerHTML =
-            '<div class="error-box">Failed: ' + err.message + '</div>';
-        })
-        .getDashboardData(filters);
+            '<div class="error-box">Failed to reach the dashboard backend: ' + err.message +
+            '<br><br>Check that APPS_SCRIPT_URL in this file matches your deployed Apps Script Web App /exec URL, and that the deployment access is set to "Anyone".</div>';
+        });
     }
 
     function statusBadge(status) {
