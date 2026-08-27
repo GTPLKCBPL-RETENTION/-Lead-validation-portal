@@ -335,7 +335,10 @@ function populateRoles(){
   sel.appendChild(tlOpt);
   (state.filters.agents||[]).forEach(function(a){
     var o = document.createElement("option");
-    o.value = a; o.textContent = "Agent — " + a;
+    // supports both the new {value,label} shape and a plain-string fallback
+    var val = (a && a.value !== undefined) ? a.value : a;
+    var label = (a && a.label !== undefined) ? a.label : a;
+    o.value = val; o.textContent = "Agent — " + label;
     sel.appendChild(o);
   });
 }
