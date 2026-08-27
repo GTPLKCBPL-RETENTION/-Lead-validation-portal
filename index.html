@@ -166,6 +166,7 @@
             <tr>
               <th>Agent</th>
               <th>PRI Calls</th>
+              <th>Working Days</th>
               <th>Avg Calls/Day</th>
               <th>Unique Customers</th>
               <th>Contactable</th>
@@ -176,7 +177,7 @@
               <th>Status</th>
             </tr>
           </thead>
-          <tbody><tr><td colspan="10" class="loading">Loading agent performance…</td></tr></tbody>
+          <tbody><tr><td colspan="11" class="loading">Loading agent performance…</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -402,7 +403,7 @@ function dialForPct(actual, target, caption){
 function loadPageTwo(agentFilter){
   callServer("getPageTwoData", [state.periodType, state.periodValue, agentFilter], function(rows){
     var tbody = document.querySelector("#p2table tbody");
-    if (!rows || !rows.length){ tbody.innerHTML = '<tr><td colspan="10" class="empty">No data for this period.</td></tr>'; return; }
+    if (!rows || !rows.length){ tbody.innerHTML = '<tr><td colspan="11" class="empty">No data for this period.</td></tr>'; return; }
     tbody.innerHTML = rows.map(function(r){
       var pill = r.finalStatus==="Achieved"
         ? '<span class="status-pill ok"><span class="dot"></span>Achieved</span>'
@@ -415,6 +416,7 @@ function loadPageTwo(agentFilter){
       return '<tr>'+
         '<td class="agent-row-name">'+r.agent+'</td>'+
         '<td>'+fmt(r.priCallCount)+'</td>'+
+        '<td>'+fmt(r.workingDays)+'</td>'+
         '<td>'+r.avgDailyCalls+'</td>'+
         '<td>'+fmt(r.totalUniqueCustomers)+'</td>'+
         '<td>'+fmt(r.contactableCount)+'</td>'+
