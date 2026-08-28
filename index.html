@@ -76,14 +76,10 @@
   .block h2{font-size:15px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:16px;}
 
   /* ---------- Table ---------- */
-  table{width:100%;border-collapse:collapse;font-size:13px;min-width:920px;}
-  th{text-align:left;color:var(--muted);font-weight:600;text-transform:uppercase;font-size:10.5px;letter-spacing:0.6px;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;}
-  td{padding:10px 10px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:12.5px;white-space:nowrap;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--muted);font-weight:600;text-transform:uppercase;font-size:10.5px;letter-spacing:0.6px;padding:8px 10px;border-bottom:1px solid var(--line);}
+  td{padding:10px 10px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
   tr:last-child td{border-bottom:none;}
-  .table-scroll-hint{display:none;color:var(--teal);font-size:11px;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;}
-  @media (max-width:900px){
-    .table-scroll-hint{display:block;}
-  }
   .status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:100px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;}
   .status-pill.ok{background:rgba(52,211,153,0.12);color:var(--green);}
   .status-pill.bad{background:rgba(248,113,113,0.12);color:var(--red);}
@@ -111,8 +107,6 @@
 
   .empty{color:var(--muted);font-size:13px;padding:30px 0;text-align:center;}
   .footnote{color:var(--muted);font-size:11.5px;margin-top:6px;line-height:1.5;}
-  .footnote ul{margin:6px 0 0 18px;padding:0;}
-  .footnote li{margin-bottom:4px;}
   .loading{color:var(--muted);font-size:13px;padding:20px 0;}
 
   @media (max-width:640px){
@@ -159,15 +153,7 @@
     </div>
     <section class="block">
       <h2>Notes</h2>
-      <div class="footnote">
-        <p>Contactable % is measured against total unique customers called. Contactable Active % (Retention) is measured against contactable customers. Customers with a Churn Request / LBO Shifted to Other ISP reason count as Contacted (the agent did reach them and confirm the outcome) but are excluded from the Active/Retained count even if the system still shows them as Active — they have already left the network and cannot be retained.</p>
-        <p>De-duplication rule, applied consistently across all three pages:</p>
-        <ul>
-          <li>If the same User Id appears in more than one calling sheet in the same period, the sheet priority <b>Suspended &gt; Upcoming &gt; Inactive</b> decides which row counts, regardless of call date.</li>
-          <li>If the same User Id appears more than once <i>within</i> the same sheet in the same period (multiple call attempts that month), the row that appears later/lower in that month's data counts.</li>
-        </ul>
-        <p>The Churn Request / LBO Shifted to Other ISP count follows this same de-duplication rule, so it stays consistent with the Contactability and Retention figures.</p>
-      </div>
+      <p class="footnote">Contactable % is measured against total unique customers called. Contactable Active % is measured against contactable customers. Customers with a Churn Request / LBO Shifted to Other ISP reason are excluded from Active counts even if status shows Active.</p>
     </section>
   </div>
 
@@ -175,7 +161,6 @@
   <div class="page" id="page2">
     <section class="block">
       <h2>Agent Performance vs Target (Contactability ≥55% · Retention ≥55% · ≥200 calls/agent/day)</h2>
-      <div class="table-scroll-hint">← Scroll horizontally to see Active, Active %, Targets and Status →</div>
       <div style="overflow-x:auto;">
         <table id="p2table">
           <thead>
@@ -203,13 +188,9 @@
   <div class="page" id="page3">
     <section class="block">
       <h2>Performance by Call Type</h2>
-      <div class="controls" style="margin-bottom:16px;">
-        <select id="p3agentSelect"></select>
-      </div>
       <div class="type-grid" id="p3grid">
         <div class="loading">Loading call-type performance…</div>
       </div>
-      <p class="footnote">Each card reflects that sheet in isolation (no cross-sheet de-duplication) so you can see each bucket's own volume. Duplicate User Ids within the same sheet/period still resolve to the later row in that month's data.</p>
     </section>
   </div>
 </div>
@@ -252,23 +233,22 @@ function mockPageTwo(){
     return {agent:a,priCallCount:calls*22,workingDays:22,avgDailyCalls:calls,totalUniqueCustomers:1800+i*40,
       contactableCount:Math.round((1800+i*40)*cp/100), contactablePct:cp,
       activeCount:Math.round((1800+i*40)*cp/100*ap/100), activePct:ap,
-      lboShiftedCount: 10+i*3,
       targets:{contactability:{target:55,actual:cp,met:cp>=55},retention:{target:55,actual:ap,met:ap>=55},dailyCalls:{target:200,actual:calls,met:calls>=200}},
       finalStatus: ok?"Achieved":"Not Achieved"};
   });
 }
 function mockPageThree(){
   return [
-    {callType:"Inactive",totalUniqueCustomers:4200,contactableCount:2600,contactablePct:61.9,activeCount:1500,activePct:57.7,lboShiftedCount:120},
-    {callType:"Upcoming",totalUniqueCustomers:2900,contactableCount:1950,contactablePct:67.2,activeCount:1300,activePct:66.7,lboShiftedCount:40},
-    {callType:"Suspended",totalUniqueCustomers:2020,contactableCount:1070,contactablePct:53.0,activeCount:550,activePct:51.4,lboShiftedCount:60}
+    {callType:"Inactive",totalUniqueCustomers:4200,contactableCount:2600,contactablePct:61.9,activeCount:1500,activePct:57.7},
+    {callType:"Upcoming",totalUniqueCustomers:2900,contactableCount:1950,contactablePct:67.2,activeCount:1300,activePct:66.7},
+    {callType:"Suspended",totalUniqueCustomers:2020,contactableCount:1070,contactablePct:53.0,activeCount:550,activePct:51.4}
   ];
 }
 
 /* ============================================================
    STATE
    ============================================================ */
-var state = { role:"TL", periodType:"month", periodValue:"", filters:null, page3Agent:"" };
+var state = { role:"TL", periodType:"month", periodValue:"", filters:null };
 
 function mockFallback(fnName, onSuccess){
   console.warn("Falling back to demo data for " + fnName + " — live fetch failed or WEB_APP_URL not reachable.");
@@ -364,50 +344,24 @@ function populateRoles(){
   });
 }
 
-function populatePage3AgentFilter(){
-  var sel = document.getElementById("p3agentSelect");
-  sel.innerHTML = "";
-  var allOpt = document.createElement("option");
-  allOpt.value = ""; allOpt.textContent = "All Agents";
-  sel.appendChild(allOpt);
-  (state.filters.agents||[]).forEach(function(a){
-    var o = document.createElement("option");
-    var val = (a && a.value !== undefined) ? a.value : a;
-    var label = (a && a.label !== undefined) ? a.label : a;
-    o.value = val; o.textContent = label;
-    sel.appendChild(o);
-  });
-  sel.value = state.page3Agent || "";
-}
-
 callServer("getDashboardBootstrap", [], function(res){
   state.filters = (res && res.filters) || MOCK.filters;
   populateRoles();
   populatePeriodValues();
-  populatePage3AgentFilter();
-  document.getElementById("p3agentSelect").addEventListener("change", function(){
-    state.page3Agent = this.value;
-    loadPageThree();
-  });
   refreshAll();
 });
 
 function refreshAll(){
   var isAgent = state.role !== "TL";
   document.querySelector('.tab[data-page="page1"]').style.display = isAgent ? "none" : "inline-block";
+  document.querySelector('.tab[data-page="page3"]').style.display = isAgent ? "none" : "inline-block";
   if (isAgent){
     document.querySelector('.tab[data-page="page2"]').click();
   }
 
-  // The agent-filter dropdown on Page 3 only makes sense for the Team
-  // Leader's full view — when a specific agent is logged in via the top
-  // role selector, Page 3 is auto-scoped to them and the extra dropdown
-  // is hidden to avoid two conflicting agent filters.
-  document.getElementById("p3agentSelect").parentElement.style.display = isAgent ? "none" : "flex";
-
   if (!isAgent) loadPageOne();
   loadPageTwo(isAgent ? state.role : null);
-  loadPageThree();
+  if (!isAgent) loadPageThree();
 }
 
 /* ============================================================
@@ -422,7 +376,7 @@ function loadPageOne(){
       {label:"Total Unique Customers Called", value:fmt(d.totalUniqueCustomers), accent:"var(--teal)"},
       {label:"Contactable Customers", value:fmt(d.contactableCount), sub:d.contactablePct+"% of unique customers", accent:"var(--teal)"},
       {label:"Contactable Active Customers", value:fmt(d.activeCount), sub:d.activePct+"% of contactable", accent:"var(--green)"},
-      {label:"Churn Request / LBO Shifted", value:fmt(d.lboShiftedCount), accent:"var(--amber)"}
+      {label:"LBO Shifted to Other ISP", value:fmt(d.lboShiftedCount), accent:"var(--amber)"}
     ];
     el.innerHTML = cards.map(function(c){
       return '<div class="kpi" style="--accent:'+c.accent+'"><div class="label">'+c.label+'</div><div class="value">'+c.value+'</div>'+(c.sub?'<div class="sub">'+c.sub+'</div>':'')+'</div>';
@@ -433,6 +387,11 @@ function loadPageOne(){
 /* ============================================================
    PAGE 2
    ============================================================ */
+function dialSVG(pct, color){
+  pct = Math.max(0, Math.min(100, pct));
+  var deg = (pct/100)*360;
+  return '<div class="dial"><div class="ring" style="background:conic-gradient('+color+' '+deg+'deg, var(--surface-2) '+deg+'deg)"></div><div class="center">'+Math.round(pct)+(pct<=100 && pct>=0 && String(pct).length<4 ? (typeof pct==="number" ? (pct<1000?"%":"") : "") : "")+'</div></div>';
+}
 function dialForCalls(actual, target){
   var pct = Math.min(150, (actual/target)*100);
   var color = actual>=target ? "var(--green)" : "var(--amber)";
@@ -481,8 +440,7 @@ function loadPageTwo(agentFilter){
 var TYPE_COLORS = {Inactive:"var(--amber)", Upcoming:"var(--blue)", Suspended:"var(--red)"};
 
 function loadPageThree(){
-  var agentArg = state.role !== "TL" ? state.role : (state.page3Agent || null);
-  callServer("getPageThreeData", [state.periodType, state.periodValue, agentArg], function(rows){
+  callServer("getPageThreeData", [state.periodType, state.periodValue], function(rows){
     var el = document.getElementById("p3grid");
     if (!rows || !rows.length){ el.innerHTML = '<div class="empty">No data for this period.</div>'; return; }
     el.innerHTML = rows.map(function(r){
@@ -494,7 +452,6 @@ function loadPageThree(){
         row("Contactable %", r.contactablePct+"%")+
         row("Active", fmt(r.activeCount))+
         row("Active %", r.activePct+"%")+
-        row("Churn/LBO Shifted", fmt(r.lboShiftedCount))+
         '</div>';
     }).join("");
   });
