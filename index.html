@@ -256,6 +256,7 @@ var state = { role:"TL", periodType:"month", periodValue:"", filters:null };
 
 function mockFallback(fnName, onSuccess){
   console.warn("Falling back to demo data for " + fnName + " — live fetch failed or WEB_APP_URL not reachable.");
+  LAST_DATA_SOURCE = "mock";
   setTimeout(function(){
     if (fnName==="getPageOneData") onSuccess(mockPageOne());
     else if (fnName==="getPageTwoData") onSuccess(mockPageTwo());
@@ -264,9 +265,12 @@ function mockFallback(fnName, onSuccess){
   }, 150);
 }
 
+var LAST_DATA_SOURCE = "unknown";
+
 function callServer(fnName, args, onSuccess){
   if (IS_LIVE){
     // Running as the Apps Script web app's own HTML output — fastest path.
+    LAST_DATA_SOURCE = "live (google.script.run)";
     var runner = google.script.run.withSuccessHandler(onSuccess).withFailureHandler(function(err){
       console.error(err);
       onSuccess(null);
@@ -280,6 +284,7 @@ function callServer(fnName, args, onSuccess){
       .then(function(r){ return r.json(); })
       .then(function(data){
         if (data && data.error) { console.error(data.error); mockFallback(fnName, onSuccess); return; }
+        LAST_DATA_SOURCE = "live (fetch to deployed URL)";
         onSuccess(data);
       })
       .catch(function(err){
@@ -352,8 +357,8 @@ callServer("getDashboardBootstrap", [], function(res){
   state.filters = (res && res.filters) || MOCK.filters;
   var stamp = document.getElementById("buildStamp");
   if (stamp) {
-    var v = (res && res.buildVersion) ? res.buildVersion : (IS_LIVE ? "unknown (older backend — no buildVersion field yet)" : "demo mode (offline preview)");
-    stamp.textContent = "build: " + v;
+    var v = (res && res.buildVersion) ? res.buildVersion : "NOT FOUND — backend is running OLD code (buildVersion field missing)";
+    stamp.textContent = "backend build: " + v + "  |  data source: " + LAST_DATA_SOURCE;
   }
   populateRoles();
   populatePeriodValues();
