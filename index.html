@@ -193,6 +193,10 @@
       </div>
     </section>
   </div>
+
+  <div id="buildStamp" style="text-align:center;color:var(--muted);font-size:10.5px;font-family:'IBM Plex Mono',monospace;padding:20px 0 4px;letter-spacing:0.5px;">
+    build: loading…
+  </div>
 </div>
 
 <script>
@@ -346,6 +350,11 @@ function populateRoles(){
 
 callServer("getDashboardBootstrap", [], function(res){
   state.filters = (res && res.filters) || MOCK.filters;
+  var stamp = document.getElementById("buildStamp");
+  if (stamp) {
+    var v = (res && res.buildVersion) ? res.buildVersion : (IS_LIVE ? "unknown (older backend — no buildVersion field yet)" : "demo mode (offline preview)");
+    stamp.textContent = "build: " + v;
+  }
   populateRoles();
   populatePeriodValues();
   refreshAll();
