@@ -1,545 +1,490 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <base target="_top">
-  <meta charset="UTF-8">
-  <title>Retention Team Dashboard</title>
-  <style>
-    :root {
-      --bg: #0f172a;
-      --panel: #1e293b;
-      --panel-light: #293548;
-      --border: #334155;
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --green: #22c55e;
-      --red: #ef4444;
-      --yellow: #eab308;
-      --radius: 10px;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-    header {
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      padding: 16px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    header h1 {
-      font-size: 1.3rem;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    header h1 .dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      background: var(--accent);
-      display: inline-block;
-    }
-    .view-switch {
-      display: flex;
-      gap: 6px;
-      background: var(--panel-light);
-      padding: 4px;
-      border-radius: 8px;
-    }
-    .view-switch button {
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      font-weight: 500;
-      transition: all .15s;
-    }
-    .view-switch button.active {
-      background: var(--accent);
-      color: #04202e;
-    }
-    .controls {
-      padding: 16px 24px;
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .controls label {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-right: 6px;
-    }
-    select {
-      background: var(--panel-light);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-    button.refresh {
-      background: var(--accent);
-      color: #04202e;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-    button.refresh:hover { opacity: 0.9; }
-    main {
-      padding: 24px;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px;
-    }
-    .card .label {
-      font-size: 0.78rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 6px;
-    }
-    .card .value {
-      font-size: 1.8rem;
-      font-weight: 700;
-    }
-    .card .sub {
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 4px;
-    }
-    .card.green .value { color: var(--green); }
-    .card.red .value { color: var(--red); }
-    .card.yellow .value { color: var(--yellow); }
-    section.panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px;
-      margin-bottom: 24px;
-    }
-    section.panel h2 {
-      margin: 0 0 16px 0;
-      font-size: 1.05rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
-    }
-    th, td {
-      padding: 10px 12px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-    th {
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-    tr:hover td { background: rgba(255,255,255,0.02); }
-    .pill {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 0.78rem;
-      font-weight: 600;
-    }
-    .pill.ok { background: rgba(34,197,94,0.15); color: var(--green); }
-    .pill.bad { background: rgba(239,68,68,0.15); color: var(--red); }
-    .loading, .empty {
-      text-align: center;
-      color: var(--muted);
-      padding: 40px;
-    }
-    .spinner {
-      width: 28px; height: 28px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 12px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .table-wrap { overflow-x: auto; }
-    footer {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.78rem;
-      padding: 20px;
-    }
-    .agent-select-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retention Team — Performance Dashboard</title>
+<style>
+  :root{
+    --navy:#1E2D64;
+    --navy-deep:#141F47;
+    --red:#D72828;
+    --ink:#1A1D29;
+    --slate:#5B6072;
+    --slate-light:#8B90A0;
+    --line:#E4E6ED;
+    --bg:#F5F6FA;
+    --card:#FFFFFF;
+    --green:#1D9E75;
+    --green-bg:#E1F5EE;
+    --amber:#BA7517;
+    --amber-bg:#FAEEDA;
+    --red-bg:#FCEBEB;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  header{
+    background:var(--navy);
+    color:#fff;
+    padding:20px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  header h1{
+    font-size:18px;
+    font-weight:600;
+    margin:0;
+    letter-spacing:0.2px;
+  }
+  header .sub{
+    font-size:12px;
+    color:#B7C0E8;
+    margin-top:2px;
+  }
+  .refresh-info{
+    font-size:12px;
+    color:#B7C0E8;
+    text-align:right;
+  }
+  .refresh-info button{
+    margin-left:10px;
+    background:rgba(255,255,255,0.12);
+    border:1px solid rgba(255,255,255,0.25);
+    color:#fff;
+    padding:6px 12px;
+    border-radius:6px;
+    font-size:12px;
+    cursor:pointer;
+  }
+  .refresh-info button:hover{ background:rgba(255,255,255,0.2); }
+
+  .tabs{
+    display:flex;
+    gap:4px;
+    background:var(--navy-deep);
+    padding:0 32px;
+  }
+  .tab{
+    padding:12px 20px;
+    font-size:14px;
+    font-weight:600;
+    color:#8E9AC7;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    user-select:none;
+  }
+  .tab.active{
+    color:#fff;
+    border-bottom-color:var(--red);
+  }
+
+  main{
+    max-width:1180px;
+    margin:0 auto;
+    padding:28px 32px 60px;
+  }
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  .section-title{
+    font-size:15px;
+    font-weight:600;
+    color:var(--navy);
+    margin:32px 0 12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .section-title:first-child{ margin-top:0; }
+  .section-title .tag{
+    font-size:10px;
+    font-weight:700;
+    color:var(--slate-light);
+    letter-spacing:0.5px;
+    background:var(--line);
+    padding:2px 7px;
+    border-radius:4px;
+  }
+
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:14px;
+  }
+  .kpi-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+  }
+  .kpi-label{
+    font-size:12px;
+    color:var(--slate);
+    margin-bottom:6px;
+  }
+  .kpi-value{
+    font-size:26px;
+    font-weight:700;
+    color:var(--ink);
+    line-height:1.1;
+  }
+  .kpi-sub{
+    font-size:12px;
+    color:var(--slate-light);
+    margin-top:4px;
+  }
+  .kpi-value.shortfall{ color:var(--red); }
+  .kpi-value.good{ color:var(--green); }
+
+  .badge{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:100px;
+  }
+  .badge.good{ background:var(--green-bg); color:var(--green); }
+  .badge.warn{ background:var(--amber-bg); color:var(--amber); }
+  .badge.bad{ background:var(--red-bg); color:var(--red); }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    font-size:13px;
+  }
+  thead th{
+    background:var(--bg);
+    color:var(--slate);
+    font-weight:600;
+    text-align:left;
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:#FAFBFD; }
+  td.agent-name{ font-weight:600; color:var(--navy); }
+  td.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  .table-wrap{ overflow-x:auto; }
+
+  .state-msg{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--slate);
+    font-size:14px;
+  }
+  .state-msg.error{ color:var(--red); }
+  .spinner{
+    width:28px; height:28px;
+    border:3px solid var(--line);
+    border-top-color:var(--navy);
+    border-radius:50%;
+    margin:0 auto 14px;
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .config-note{
+    background:#FFF7E6;
+    border:1px solid #F0D9A0;
+    color:#7A5C10;
+    font-size:12px;
+    padding:10px 14px;
+    border-radius:8px;
+    margin-bottom:20px;
+  }
+  .config-note code{
+    background:#FFF0CC;
+    padding:1px 5px;
+    border-radius:4px;
+  }
+
+  @media (max-width:640px){
+    header{ padding:16px 18px; flex-direction:column; align-items:flex-start; gap:8px; }
+    .tabs{ padding:0 18px; overflow-x:auto; }
+    main{ padding:20px 18px 40px; }
+  }
+</style>
 </head>
 <body>
-  <header>
-    <h1><span class="dot"></span> Retention Team Dashboard</h1>
-    <div class="view-switch">
-      <button id="btnAgentView" class="active">Agent View</button>
-      <button id="btnTLView">TL View</button>
-    </div>
-  </header>
 
-  <div class="controls">
-    <div class="agent-select-row" id="agentSelectRow">
-      <label>Agent</label>
-      <select id="agentSelect"></select>
-    </div>
-    <div>
-      <label>Period Type</label>
-      <select id="periodType">
-        <option value="monthly">Monthly</option>
-        <option value="quarterly">Quarterly</option>
-        <option value="annual">Annual</option>
-      </select>
-    </div>
-    <div>
-      <label>Period</label>
-      <select id="periodValue"></select>
-    </div>
-    <button class="refresh" id="btnRefresh">Refresh</button>
+<header>
+  <div>
+    <h1>Retention Team — Performance Dashboard</h1>
+    <div class="sub">GTPL KCBPL &middot; Live from Google Sheets</div>
+  </div>
+  <div class="refresh-info">
+    <span id="last-updated">Loading…</span>
+    <button onclick="loadData()">Refresh</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-view="tl">TL view</div>
+  <div class="tab" data-view="agent">Agent view</div>
+</div>
+
+<main>
+
+  <div id="config-note" class="config-note" style="display:none;">
+    No data endpoint configured yet. Open this file and set <code>API_BASE</code> at the bottom of the script
+    to your Google Apps Script Web App URL.
   </div>
 
-  <main id="mainContent">
-    <div class="loading"><div class="spinner"></div>Loading data…</div>
-  </main>
+  <div id="loading" class="state-msg">
+    <div class="spinner"></div>
+    Fetching latest data…
+  </div>
 
-  <footer>Retention Team Dashboard · Data source: Google Sheet</footer>
+  <div id="error" class="state-msg error" style="display:none;"></div>
 
-  <script>
-    // Apps Script Web App deployment URL (JSON API endpoint)
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxhHtsk_UYaKcEro9JLbYa30JPpgalUYHGVX9GY_uOEwvcPIGVVtJOMuXiLGe9H8lBSKg/exec';
+  <div id="content" style="display:none;">
 
-    let periodsData = null;
-    let currentView = 'agent'; // 'agent' | 'tl'
+    <!-- TL VIEW -->
+    <div class="view active" id="view-tl">
 
-    document.getElementById('btnAgentView').addEventListener('click', () => switchView('agent'));
-    document.getElementById('btnTLView').addEventListener('click', () => switchView('tl'));
-    document.getElementById('periodType').addEventListener('change', onPeriodTypeChange);
-    document.getElementById('btnRefresh').addEventListener('click', loadCurrentView);
-    document.getElementById('agentSelect').addEventListener('change', loadCurrentView);
+      <div class="section-title">Team summary <span class="tag">All 5 agents</span></div>
+      <div class="kpi-grid" id="tl-kpi-grid"></div>
 
-    function switchView(view) {
-      currentView = view;
-      document.getElementById('btnAgentView').classList.toggle('active', view === 'agent');
-      document.getElementById('btnTLView').classList.toggle('active', view === 'tl');
-      document.getElementById('agentSelectRow').style.display = view === 'agent' ? 'flex' : 'none';
-      loadCurrentView();
-    }
+      <div class="section-title">PRI call report</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Agent</th><th class="num">Calls dialed</th><th class="num">Working days</th>
+            <th class="num">Avg/day</th><th class="num">Target/day</th>
+            <th class="num">Expected total</th><th class="num">Shortfall</th>
+          </tr></thead>
+          <tbody id="tl-pri-body"></tbody>
+        </table>
+      </div>
 
-    function onPeriodTypeChange() {
-      populatePeriodValues();
-      loadCurrentView();
-    }
+      <div class="section-title">Contactable calling report <span class="tag">Target &ge;55%</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Agent</th><th class="num">Total called</th><th class="num">Contacted</th>
+            <th class="num">Contacted %</th><th class="num">Target</th>
+            <th class="num">Shortfall</th><th class="num">Achievement %</th>
+          </tr></thead>
+          <tbody id="tl-contactable-body"></tbody>
+        </table>
+      </div>
 
-    function populatePeriodValues() {
-      const type = document.getElementById('periodType').value;
-      const sel = document.getElementById('periodValue');
-      sel.innerHTML = '';
-      const opts = periodsData[type] || [];
-      // default to latest period
-      opts.slice().reverse().forEach((o, idx) => {
-        const el = document.createElement('option');
-        el.value = o.value;
-        el.textContent = o.label;
-        sel.appendChild(el);
-      });
-    }
+      <div class="section-title">Renew report <span class="tag">Target &ge;55%</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Agent</th><th class="num">Total called</th><th class="num">Renewed</th>
+            <th class="num">Renewed %</th><th class="num">Target</th>
+            <th class="num">Shortfall</th><th class="num">Achievement %</th>
+          </tr></thead>
+          <tbody id="tl-renew-body"></tbody>
+        </table>
+      </div>
 
-    function getCurrentFilter() {
-      return {
-        type: document.getElementById('periodType').value,
-        value: document.getElementById('periodValue').value
-      };
-    }
+    </div>
 
-    function init() {
-      callApi({ action: 'periods' }).then(onPeriodsLoaded).catch(onError);
-      callApi({ action: 'agents' }).then(onAgentsLoaded).catch(onError);
-    }
+    <!-- AGENT VIEW -->
+    <div class="view" id="view-agent">
 
-    // Calls the Apps Script Web App JSON endpoint via fetch()
-    function callApi(params) {
-      const url = new URL(API_URL);
-      Object.keys(params).forEach(k => url.searchParams.set(k, params[k]));
-      return fetch(url.toString())
-        .then(res => {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.json();
-        })
-        .then(json => {
-          if (!json.success) throw new Error(json.error || 'Unknown API error');
-          return json.data;
-        });
-    }
+      <div class="section-title">PRI call report</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Agent</th><th class="num">Calls dialed</th><th class="num">Working days</th>
+            <th class="num">Avg/day</th><th class="num">Target/day</th>
+            <th class="num">Expected total</th><th class="num">Shortfall</th>
+          </tr></thead>
+          <tbody id="agent-pri-body"></tbody>
+        </table>
+      </div>
 
-    function onAgentsLoaded(agents) {
-      const sel = document.getElementById('agentSelect');
-      sel.innerHTML = '<option value="__all__">All Agents</option>';
-      agents.forEach(a => {
-        const el = document.createElement('option');
-        el.value = a;
-        el.textContent = a;
-        sel.appendChild(el);
-      });
-    }
+      <div class="section-title">Contactable calling report <span class="tag">Target &ge;55%</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Agent</th><th class="num">Total called</th><th class="num">Contacted</th>
+            <th class="num">Contacted %</th><th class="num">Target</th>
+            <th class="num">Shortfall</th><th class="num">Achievement %</th>
+          </tr></thead>
+          <tbody id="agent-contactable-body"></tbody>
+        </table>
+      </div>
 
-    function onPeriodsLoaded(periods) {
-      periodsData = periods;
-      populatePeriodValues();
-      loadCurrentView();
-    }
+      <div class="section-title">Renew report <span class="tag">Target &ge;55%</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Agent</th><th class="num">Total called</th><th class="num">Renewed</th>
+            <th class="num">Renewed %</th><th class="num">Target</th>
+            <th class="num">Shortfall</th><th class="num">Achievement %</th>
+          </tr></thead>
+          <tbody id="agent-renew-body"></tbody>
+        </table>
+      </div>
 
-    function onError(err) {
-      document.getElementById('mainContent').innerHTML =
-        '<div class="empty">⚠️ Error loading data: ' + (err.message || err) + '</div>';
-    }
+    </div>
 
-    function loadCurrentView() {
-      if (!periodsData) return;
-      const filter = getCurrentFilter();
-      if (!filter.value) {
-        document.getElementById('mainContent').innerHTML = '<div class="empty">No data available for this period type.</div>';
-        return;
-      }
-      document.getElementById('mainContent').innerHTML = '<div class="loading"><div class="spinner"></div>Loading data…</div>';
+  </div>
 
-      if (currentView === 'agent') {
-        Promise.all([
-          callApi({ action: 'pri', type: filter.type, value: filter.value }),
-          callApi({ action: 'contactability', type: filter.type, value: filter.value }),
-          callApi({ action: 'renew', type: filter.type, value: filter.value })
-        ]).then(([pri, contact, renew]) => renderAgentView(pri, contact, renew)).catch(onError);
-      } else {
-        callApi({ action: 'tl', type: filter.type, value: filter.value }).then(renderTLView).catch(onError);
-      }
-    }
+</main>
 
-    function filterByAgent(rows) {
-      const sel = document.getElementById('agentSelect').value;
-      if (!sel || sel === '__all__') return rows;
-      return rows.filter(r => r.agentName === sel);
-    }
+<script>
+/* =========================================================
+   CONFIG — set this to your Apps Script Web App deployment URL
+   e.g. "https://script.google.com/macros/s/AKfycb.../exec"
+   ========================================================= */
+const API_BASE = "https://script.google.com/macros/s/AKfycbzKgVNMqcthgsevnnuCN-1XruGQdD98cSB6Uf0P6sLIH9N8adAutXDXZPnYPwBByMTU8g/exec";
 
-    function pct(v) { return (v === undefined || v === null) ? '-' : v.toFixed(2) + '%'; }
-    function num(v) { return (v === undefined || v === null) ? '-' : v.toLocaleString(); }
+const POLL_INTERVAL_MS = 60000; // refresh every 60s
 
-    function renderAgentView(pri, contact, renew) {
-      pri = filterByAgent(pri);
-      contact = filterByAgent(contact);
-      renew = filterByAgent(renew);
+let pollTimer = null;
 
-      let html = '';
+document.querySelectorAll(".tab").forEach(tab=>{
+  tab.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("view-"+tab.dataset.view).classList.add("active");
+  });
+});
 
-      // Summary cards (totals across shown agents)
-      const totalCalls = pri.reduce((s, r) => s + r.totalCallsDialed, 0);
-      const totalShortfall = pri.reduce((s, r) => s + r.totalCallShortfall, 0);
-      const avgContactPct = contact.length ? (contact.reduce((s, r) => s + r.contactedUserCountPct, 0) / contact.length) : 0;
-      const avgRenewPct = renew.length ? (renew.reduce((s, r) => s + r.renewUserCountPct, 0) / renew.length) : 0;
+function fmtNum(n){
+  if(n===undefined || n===null || isNaN(n)) return "—";
+  return Number(n).toLocaleString("en-IN");
+}
+function fmtPct(n){
+  if(n===undefined || n===null || isNaN(n)) return "—";
+  return Number(n).toFixed(2) + "%";
+}
+function achievementBadge(pct){
+  if(pct===undefined || pct===null || isNaN(pct)) return "";
+  let cls = "bad";
+  if(pct>=100) cls="good";
+  else if(pct>=75) cls="warn";
+  return `<span class="badge ${cls}">${fmtPct(pct)}</span>`;
+}
 
-      html += '<div class="cards">';
-      html += cardHtml('Total Calls Dialed', num(totalCalls), '', 'green');
-      html += cardHtml('Total Call Shortfall', num(totalShortfall), 'vs. 200/day target', totalShortfall > 0 ? 'red' : 'green');
-      html += cardHtml('Avg Contacted %', pct(avgContactPct), 'Target ≥55%', avgContactPct >= 55 ? 'green' : 'red');
-      html += cardHtml('Avg Renew %', pct(avgRenewPct), 'Target ≥55%', avgRenewPct >= 55 ? 'green' : 'red');
-      html += '</div>';
+function renderPriRows(bodyId, agents){
+  const body = document.getElementById(bodyId);
+  body.innerHTML = agents.map(a=>`
+    <tr>
+      <td class="agent-name">${escapeHtml(a.agentName)}</td>
+      <td class="num">${fmtNum(a.totalCallsDialed)}</td>
+      <td class="num">${fmtNum(a.workingDays)}</td>
+      <td class="num">${fmtNum(a.averageCallsPerDay)}</td>
+      <td class="num">${fmtNum(a.targetCallsPerDay)}</td>
+      <td class="num">${fmtNum(a.expectedTotalCalls)}</td>
+      <td class="num" style="color:${a.totalCallShortfall>0?'var(--red)':'var(--green)'}">${fmtNum(a.totalCallShortfall)}</td>
+    </tr>
+  `).join("");
+}
 
-      // PRI Table
-      html += '<section class="panel"><h2>📞 PRI Call Report</h2><div class="table-wrap"><table>';
-      html += '<tr><th>Agent</th><th>Total Calls Dialed</th><th>Working Days</th><th>Avg Calls/Day</th><th>Target/Day</th><th>Expected Total</th><th>Shortfall</th></tr>';
-      pri.forEach(r => {
-        html += `<tr>
-          <td>${esc(r.agentName)}</td>
-          <td>${num(r.totalCallsDialed)}</td>
-          <td>${num(r.workingDays)}</td>
-          <td>${r.avgCallsPerDay}</td>
-          <td>${r.targetCallsPerDay}</td>
-          <td>${num(r.expectedTotalCalls)}</td>
-          <td>${badge(r.totalCallShortfall === 0, num(r.totalCallShortfall))}</td>
-        </tr>`;
-      });
-      if (pri.length === 0) html += emptyRow(7);
-      html += '</table></div></section>';
+function renderContactOrRenewRows(bodyId, agents, mode){
+  const body = document.getElementById(bodyId);
+  const countField = mode==="contactable" ? "contactedUserCount" : "contactedRenewUserCount";
+  const pctField = mode==="contactable" ? "contactedUserPct" : "contactedRenewUserPct";
+  body.innerHTML = agents.map(a=>`
+    <tr>
+      <td class="agent-name">${escapeHtml(a.agentName)}</td>
+      <td class="num">${fmtNum(a.totalUserIdCalled)}</td>
+      <td class="num">${fmtNum(a[countField])}</td>
+      <td class="num">${fmtPct(a[pctField])}</td>
+      <td class="num">${fmtNum(a.targetCount)}</td>
+      <td class="num" style="color:${a.shortfall>0?'var(--red)':'var(--green)'}">${fmtNum(a.shortfall)}</td>
+      <td class="num">${achievementBadge(a.achievementPct)}</td>
+    </tr>
+  `).join("");
+}
 
-      // Contactability Table
-      html += '<section class="panel"><h2>☎️ Inactive User Contactable Calling Report</h2><div class="table-wrap"><table>';
-      html += '<tr><th>Agent</th><th>Total User ID Called</th><th>Contacted Count</th><th>Contacted %</th><th>Target (≥55%)</th><th>Shortfall</th><th>Achievement Count</th><th>Achievement %</th></tr>';
-      contact.forEach(r => {
-        html += `<tr>
-          <td>${esc(r.agentName)}</td>
-          <td>${num(r.totalUserIdCalled)}</td>
-          <td>${num(r.contactedUserCount)}</td>
-          <td>${pct(r.contactedUserCountPct)}</td>
-          <td>${num(r.targetContactedUserCount)}</td>
-          <td>${badge(r.shortfallCount === 0, num(r.shortfallCount))}</td>
-          <td>${num(r.achievementCount)}</td>
-          <td>${badge(r.achievementPct >= 100, pct(r.achievementPct))}</td>
-        </tr>`;
-      });
-      if (contact.length === 0) html += emptyRow(8);
-      html += '</table></div></section>';
+function renderTlKpis(data){
+  const grid = document.getElementById("tl-kpi-grid");
+  const tl = data.tl;
+  grid.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Total calls dialed (PRI)</div>
+      <div class="kpi-value">${fmtNum(tl.pri.totalCallsDialed)}</div>
+      <div class="kpi-sub">Shortfall: <span style="color:${tl.pri.shortfall>0?'var(--red)':'var(--green)'}">${fmtNum(tl.pri.shortfall)}</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Contactable achievement</div>
+      <div class="kpi-value">${fmtPct(tl.contactable.achievementPct)}</div>
+      <div class="kpi-sub">${fmtNum(tl.contactable.actualCount)} of ${fmtNum(tl.contactable.totalUserIdCalled)} contacted</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Renew achievement</div>
+      <div class="kpi-value">${fmtPct(tl.renew.achievementPct)}</div>
+      <div class="kpi-sub">${fmtNum(tl.renew.actualCount)} of ${fmtNum(tl.renew.totalUserIdCalled)} renewed</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">LBO shifted to other ISP</div>
+      <div class="kpi-value shortfall">${fmtNum(tl.lboShiftedCount)}</div>
+      <div class="kpi-sub">Unique user IDs</div>
+    </div>
+  `;
+}
 
-      // Renew Table
-      html += '<section class="panel"><h2>🔄 Inactive User Renew Report</h2><div class="table-wrap"><table>';
-      html += '<tr><th>Agent</th><th>Total User ID Called (Excl. LBO)</th><th>Contacted Renew Count</th><th>Renew %</th><th>Target (≥55%)</th><th>Renew Shortfall</th><th>Achievement Count</th><th>Achievement %</th></tr>';
-      renew.forEach(r => {
-        html += `<tr>
-          <td>${esc(r.agentName)}</td>
-          <td>${num(r.totalUserIdCalled)}</td>
-          <td>${num(r.contactedRenewUserCount)}</td>
-          <td>${pct(r.renewUserCountPct)}</td>
-          <td>${num(r.targetRenewUserCount)}</td>
-          <td>${badge(r.renewShortfall === 0, num(r.renewShortfall))}</td>
-          <td>${num(r.achievementCount)}</td>
-          <td>${badge(r.achievementPct >= 100, pct(r.achievementPct))}</td>
-        </tr>`;
-      });
-      if (renew.length === 0) html += emptyRow(8);
-      html += '</table></div></section>';
+function escapeHtml(str){
+  const d = document.createElement("div");
+  d.textContent = str==null ? "" : String(str);
+  return d.innerHTML;
+}
 
-      document.getElementById('mainContent').innerHTML = html;
-    }
+async function loadData(){
+  if(!API_BASE){
+    document.getElementById("config-note").style.display = "block";
+    document.getElementById("loading").style.display = "none";
+    return;
+  }
+  document.getElementById("config-note").style.display = "none";
+  document.getElementById("error").style.display = "none";
 
-    function renderTLView(data) {
-      let html = '';
+  try{
+    const res = await fetch(API_BASE, { cache: "no-store" });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
 
-      html += '<div class="cards">';
-      html += cardHtml('Total User ID Called', num(data.summary.totalUserIdCalled), '', 'green');
-      html += cardHtml('Total Calls Dialed', num(data.summary.totalCallsDialed), 'Working Days: ' + num(data.summary.totalWorkingDays), 'green');
-      html += cardHtml('Call Shortfall', num(data.summary.callShortfall), 'vs expected ' + num(data.summary.expectedTotalCalls), data.summary.callShortfall > 0 ? 'red' : 'green');
-      html += cardHtml('LBO Shifted to Other ISP', num(data.lboShiftedCount), 'Unique User IDs', 'yellow');
-      html += '</div>';
+    renderTlKpis(data);
+    renderPriRows("tl-pri-body", data.pri.agents);
+    renderContactOrRenewRows("tl-contactable-body", data.contactable.agents, "contactable");
+    renderContactOrRenewRows("tl-renew-body", data.renew.agents, "renew");
 
-      html += '<section class="panel"><h2>📊 Team Performance Summary</h2><div class="table-wrap"><table>';
-      html += '<tr><th>Call Type</th><th>Target</th><th>Actual</th><th>Achievement %</th><th>Target − Achievement (Shortfall)</th></tr>';
-      html += `<tr>
-        <td>Contactable / Contacted</td>
-        <td>${data.contactable.target}</td>
-        <td>${num(data.contactable.actual)}</td>
-        <td>${badge(data.contactable.achievementPct >= 100, pct(data.contactable.achievementPct))}</td>
-        <td>${badge(data.contactable.shortfall === 0, num(data.contactable.shortfall))}</td>
-      </tr>`;
-      html += `<tr>
-        <td>Renew / Active</td>
-        <td>${data.renew.target}</td>
-        <td>${num(data.renew.actual)}</td>
-        <td>${badge(data.renew.achievementPct >= 100, pct(data.renew.achievementPct))}</td>
-        <td>${badge(data.renew.shortfall === 0, num(data.renew.shortfall))}</td>
-      </tr>`;
-      html += '</table></div></section>';
+    renderPriRows("agent-pri-body", data.pri.agents);
+    renderContactOrRenewRows("agent-contactable-body", data.contactable.agents, "contactable");
+    renderContactOrRenewRows("agent-renew-body", data.renew.agents, "renew");
 
-      // Agent breakdown tables (reuse same rendering logic)
-      html += '<section class="panel"><h2>👥 Agent Breakdown — PRI Call Report</h2><div class="table-wrap"><table>';
-      html += '<tr><th>Agent</th><th>Total Calls Dialed</th><th>Working Days</th><th>Avg Calls/Day</th><th>Target/Day</th><th>Expected Total</th><th>Shortfall</th></tr>';
-      data.agentBreakdown.pri.forEach(r => {
-        html += `<tr>
-          <td>${esc(r.agentName)}</td>
-          <td>${num(r.totalCallsDialed)}</td>
-          <td>${num(r.workingDays)}</td>
-          <td>${r.avgCallsPerDay}</td>
-          <td>${r.targetCallsPerDay}</td>
-          <td>${num(r.expectedTotalCalls)}</td>
-          <td>${badge(r.totalCallShortfall === 0, num(r.totalCallShortfall))}</td>
-        </tr>`;
-      });
-      if (data.agentBreakdown.pri.length === 0) html += emptyRow(7);
-      html += '</table></div></section>';
+    document.getElementById("last-updated").textContent =
+      "Updated " + new Date(data.generatedAt).toLocaleTimeString("en-IN");
 
-      html += '<section class="panel"><h2>👥 Agent Breakdown — Contactability</h2><div class="table-wrap"><table>';
-      html += '<tr><th>Agent</th><th>Total User ID Called</th><th>Contacted Count</th><th>Contacted %</th><th>Target (≥55%)</th><th>Shortfall</th><th>Achievement %</th></tr>';
-      data.agentBreakdown.contactability.forEach(r => {
-        html += `<tr>
-          <td>${esc(r.agentName)}</td>
-          <td>${num(r.totalUserIdCalled)}</td>
-          <td>${num(r.contactedUserCount)}</td>
-          <td>${pct(r.contactedUserCountPct)}</td>
-          <td>${num(r.targetContactedUserCount)}</td>
-          <td>${badge(r.shortfallCount === 0, num(r.shortfallCount))}</td>
-          <td>${badge(r.achievementPct >= 100, pct(r.achievementPct))}</td>
-        </tr>`;
-      });
-      if (data.agentBreakdown.contactability.length === 0) html += emptyRow(7);
-      html += '</table></div></section>';
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("content").style.display = "block";
+  }catch(err){
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("content").style.display = "none";
+    const errEl = document.getElementById("error");
+    errEl.style.display = "block";
+    errEl.textContent = "Could not load data: " + err.message;
+  }
+}
 
-      html += '<section class="panel"><h2>👥 Agent Breakdown — Renew Report</h2><div class="table-wrap"><table>';
-      html += '<tr><th>Agent</th><th>Total User ID Called</th><th>Contacted Renew</th><th>Renew %</th><th>Target (≥55%)</th><th>Shortfall</th><th>Achievement %</th></tr>';
-      data.agentBreakdown.renew.forEach(r => {
-        html += `<tr>
-          <td>${esc(r.agentName)}</td>
-          <td>${num(r.totalUserIdCalled)}</td>
-          <td>${num(r.contactedRenewUserCount)}</td>
-          <td>${pct(r.renewUserCountPct)}</td>
-          <td>${num(r.targetRenewUserCount)}</td>
-          <td>${badge(r.renewShortfall === 0, num(r.renewShortfall))}</td>
-          <td>${badge(r.achievementPct >= 100, pct(r.achievementPct))}</td>
-        </tr>`;
-      });
-      if (data.agentBreakdown.renew.length === 0) html += emptyRow(7);
-      html += '</table></div></section>';
+loadData();
+pollTimer = setInterval(loadData, POLL_INTERVAL_MS);
+</script>
 
-      document.getElementById('mainContent').innerHTML = html;
-    }
-
-    function cardHtml(label, value, sub, cls) {
-      return `<div class="card ${cls || ''}">
-        <div class="label">${label}</div>
-        <div class="value">${value}</div>
-        ${sub ? '<div class="sub">' + sub + '</div>' : ''}
-      </div>`;
-    }
-
-    function badge(isGood, text) {
-      return '<span class="pill ' + (isGood ? 'ok' : 'bad') + '">' + text + '</span>';
-    }
-
-    function emptyRow(colspan) {
-      return '<tr><td colspan="' + colspan + '" style="text-align:center;color:var(--muted);">No data for this period</td></tr>';
-    }
-
-    function esc(s) {
-      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    }
-
-    init();
-  </script>
 </body>
 </html>
