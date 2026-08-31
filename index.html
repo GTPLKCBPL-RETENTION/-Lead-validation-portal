@@ -246,6 +246,9 @@
   <footer>Retention Team Dashboard · Data source: Google Sheet</footer>
 
   <script>
+    // Apps Script Web App deployment URL (JSON API endpoint)
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxhHtsk_UYaKcEro9JLbYa30JPpgalUYHGVX9GY_uOEwvcPIGVVtJOMuXiLGe9H8lBSKg/exec';
+
     let periodsData = null;
     let currentView = 'agent'; // 'agent' | 'tl'
 
@@ -290,8 +293,23 @@
     }
 
     function init() {
-      google.script.run.withSuccessHandler(onPeriodsLoaded).withFailureHandler(onError).getAvailablePeriods();
-      google.script.run.withSuccessHandler(onAgentsLoaded).withFailureHandler(onError).getAgentList();
+      callApi({ action: 'periods' }).then(onPeriodsLoaded).catch(onError);
+      callApi({ action: 'agents' }).then(onAgentsLoaded).catch(onError);
+    }
+
+    // Calls the Apps Script Web App JSON endpoint via fetch()
+    function callApi(params) {
+      const url = new URL(API_URL);
+      Object.keys(params).forEach(k => url.searchParams.set(k, params[k]));
+      return fetch(url.toString())
+        .then(res => {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(json => {
+          if (!json.success) throw new Error(json.error || 'Unknown API error');
+          return json.data;
+        });
     }
 
     function onAgentsLoaded(agents) {
@@ -327,22 +345,13 @@
 
       if (currentView === 'agent') {
         Promise.all([
-          runAsync('getPRIReport', filter),
-          runAsync('getContactabilityReport', filter),
-          runAsync('getRenewReport', filter)
+          callApi({ action: 'pri', type: filter.type, value: filter.value }),
+          callApi({ action: 'contactability', type: filter.type, value: filter.value }),
+          callApi({ action: 'renew', type: filter.type, value: filter.value })
         ]).then(([pri, contact, renew]) => renderAgentView(pri, contact, renew)).catch(onError);
       } else {
-        runAsync('getTLReport', filter).then(renderTLView).catch(onError);
+        callApi({ action: 'tl', type: filter.type, value: filter.value }).then(renderTLView).catch(onError);
       }
-    }
-
-    function runAsync(fnName, arg) {
-      return new Promise((resolve, reject) => {
-        google.script.run
-          .withSuccessHandler(resolve)
-          .withFailureHandler(reject)
-          [fnName](arg);
-      });
     }
 
     function filterByAgent(rows) {
