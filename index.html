@@ -2,512 +2,535 @@
 <html>
 <head>
   <base target="_top">
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
+  <title>Retention Team Dashboard</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
     :root {
-      --ink: #14201E;
-      --paper: #F7F5F0;
-      --line: #DCD6C9;
-      --green: #2F6E4F;
-      --green-bg: #E4EFE7;
-      --amber: #9A6218;
-      --amber-bg: #F5EAD4;
-      --red: #A6362B;
-      --red-bg: #F5E1DE;
-      --teal: #1F6E70;
-      --font-display: 'Newsreader', Georgia, serif;
-      --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --panel-light: #293548;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+      --radius: 10px;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-mono); }
-    #app { display: flex; min-height: 100vh; }
-
-    .rail { width: 220px; border-right: 1px solid var(--line); padding: 28px 8px; flex-shrink: 0; }
-    .rail .logo { font-family: var(--font-display); font-size: 16px; font-weight: 600; padding-left: 12px; }
-    .rail .sub { font-family: var(--font-mono); font-size: 10.5px; color: #8A8371; padding-left: 12px; margin-bottom: 20px; }
-
-    .page-tabs { display: flex; gap: 4px; padding: 0 4px 18px; margin-bottom: 6px; border-bottom: 1px solid var(--line); }
-    .page-tab {
-      flex: 1; text-align: center; padding: 9px 6px; border: none; border-radius: 3px; cursor: pointer;
-      background: transparent; color: #6B6455; font-family: var(--font-mono); font-size: 11.5px;
-      font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase;
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
     }
-    .page-tab.active { background: var(--ink); color: var(--paper); }
-    .page-tab:hover:not(.active) { background: #ECE8DD; }
-
-    .group { margin-bottom: 22px; }
-    .group-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: #8A8371; margin-bottom: 8px; padding-left: 12px; }
-    .filter-btn {
-      display: block; width: 100%; text-align: left; padding: 7px 12px; margin-bottom: 2px;
-      border: none; border-radius: 3px; cursor: pointer; background: transparent; color: var(--ink);
-      font-family: var(--font-mono); font-size: 12.5px; letter-spacing: 0.2px;
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
     }
-    .filter-btn.active { background: var(--ink); color: var(--paper); }
-    .filter-btn:hover:not(.active) { background: #ECE8DD; }
-    .filter-btn .hint { opacity: 0.6; }
-
-    .main { flex: 1; padding: 32px 40px 60px; max-width: 1180px; }
-    .headrow { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; }
-    .title { font-family: var(--font-display); font-size: 28px; font-weight: 500; }
-    .subtitle { font-size: 12.5px; color: #6B6455; margin-top: 4px; }
-    .metainfo { font-size: 11px; color: #6B6455; text-align: right; line-height: 1.6; }
-
-    .kpi-strip { display: flex; gap: 32px; margin-bottom: 40px; flex-wrap: wrap; }
-    .kpi { flex: 1; min-width: 220px; padding-left: 16px; border-left: 3px solid var(--line); }
-    .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #6B6455; margin-bottom: 6px; }
-    .kpi-value-row { display: flex; align-items: baseline; gap: 10px; }
-    .kpi-value { font-family: var(--font-display); font-size: 34px; font-weight: 500; color: var(--ink); line-height: 1; }
-    .kpi-detail { font-size: 12px; color: #6B6455; margin-top: 8px; line-height: 1.6; }
-
-    .pill {
-      display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 3px;
-      font-size: 11.5px; font-weight: 600; letter-spacing: 0.2px; white-space: nowrap;
+    header h1 {
+      font-size: 1.3rem;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    .pill .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-    .pill.achieved { background: var(--green-bg); color: var(--green); }
-    .pill.achieved .dot { background: var(--green); }
-    .pill.near { background: var(--amber-bg); color: var(--amber); }
-    .pill.near .dot { background: var(--amber); }
-    .pill.shortfall { background: var(--red-bg); color: var(--red); }
-    .pill.shortfall .dot { background: var(--red); }
-
-    .lbo-box {
-      display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px;
-      border: 1px solid var(--line); border-radius: 3px; margin-bottom: 40px; background: #fff;
+    header h1 .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent);
+      display: inline-block;
     }
-    .lbo-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #6B6455; }
-    .lbo-value { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--teal); }
-    .lbo-unit { font-size: 11px; color: #8A8371; }
-
-    .section-label {
-      font-family: var(--font-display); font-size: 20px; font-weight: 500; color: var(--ink);
-      margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line);
+    .view-switch {
+      display: flex;
+      gap: 6px;
+      background: var(--panel-light);
+      padding: 4px;
+      border-radius: 8px;
     }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+    .view-switch button {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all .15s;
+    }
+    .view-switch button.active {
+      background: var(--accent);
+      color: #04202e;
+    }
+    .controls {
+      padding: 16px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .controls label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-right: 6px;
+    }
+    select {
+      background: var(--panel-light);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    button.refresh {
+      background: var(--accent);
+      color: #04202e;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    button.refresh:hover { opacity: 0.9; }
+    main {
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .card .label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .card .value {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+    .card .sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .card.green .value { color: var(--green); }
+    .card.red .value { color: var(--red); }
+    .card.yellow .value { color: var(--yellow); }
+    section.panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    section.panel h2 {
+      margin: 0 0 16px 0;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
     th {
-      text-align: right; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px;
-      color: #6B6455; font-weight: 600; padding: 8px 12px; border-bottom: 1px solid var(--line); white-space: nowrap;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
-    th:first-child, td:first-child { text-align: left; }
-    td {
-      text-align: right; font-size: 13px; color: var(--ink); padding: 9px 12px;
-      border-bottom: 1px solid var(--line); white-space: nowrap;
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
     }
-    td.serif { font-family: var(--font-display); }
-    td.bold, th.bold { font-weight: 600; }
-    tr.total-row td { font-weight: 600; }
-    tr.clickable-row { cursor: pointer; }
-    tr.clickable-row:hover td { background: #ECE8DD; }
-
-    .footnote { font-size: 11px; color: #8A8371; padding-top: 10px; border-top: 1px solid var(--line); }
-    .loading, .error-box { padding: 40px; font-family: var(--font-mono); font-size: 13px; color: #6B6455; }
-    .error-box { color: var(--red); }
+    .pill.ok { background: rgba(34,197,94,0.15); color: var(--green); }
+    .pill.bad { background: rgba(239,68,68,0.15); color: var(--red); }
+    .loading, .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px;
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .table-wrap { overflow-x: auto; }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      padding: 20px;
+    }
+    .agent-select-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
   </style>
 </head>
 <body>
-  <div id="app">
-    <div class="rail">
-      <div class="logo">Retention</div>
-      <div class="sub">Performance dashboard</div>
-
-      <div class="page-tabs">
-        <button class="page-tab" id="tab-agent">Agent View</button>
-        <button class="page-tab" id="tab-tl">TL View</button>
-      </div>
-
-      <div class="group">
-        <div class="group-title">Financial year</div>
-        <div id="fy-filters"></div>
-      </div>
-
-      <div class="group">
-        <div class="group-title">Period</div>
-        <div id="period-filters"></div>
-      </div>
-
-      <div class="group" id="quarter-group">
-        <div class="group-title">Quarter</div>
-        <div id="quarter-filters"></div>
-      </div>
-
-      <div class="group" id="month-group">
-        <div class="group-title">Month</div>
-        <div id="month-filters"></div>
-      </div>
-
-      <div class="group" id="agent-picker-group">
-        <div class="group-title">Agent</div>
-        <div id="agent-filters"></div>
-      </div>
+  <header>
+    <h1><span class="dot"></span> Retention Team Dashboard</h1>
+    <div class="view-switch">
+      <button id="btnAgentView" class="active">Agent View</button>
+      <button id="btnTLView">TL View</button>
     </div>
+  </header>
 
-    <div class="main" id="main-content">
-      <div class="loading">Loading dashboard data…</div>
+  <div class="controls">
+    <div class="agent-select-row" id="agentSelectRow">
+      <label>Agent</label>
+      <select id="agentSelect"></select>
     </div>
+    <div>
+      <label>Period Type</label>
+      <select id="periodType">
+        <option value="monthly">Monthly</option>
+        <option value="quarterly">Quarterly</option>
+        <option value="annual">Annual</option>
+      </select>
+    </div>
+    <div>
+      <label>Period</label>
+      <select id="periodValue"></select>
+    </div>
+    <button class="refresh" id="btnRefresh">Refresh</button>
   </div>
 
+  <main id="mainContent">
+    <div class="loading"><div class="spinner"></div>Loading data…</div>
+  </main>
+
+  <footer>Retention Team Dashboard · Data source: Google Sheet</footer>
+
   <script>
-    /* -----------------------------------------------------------
-     * Backend API — same Apps Script web app URL serves both views.
-     * ----------------------------------------------------------- */
-    var API_URL = 'https://script.google.com/macros/s/AKfycbzbrzVnOdhlQsnUO7u0h_8aZQTm6YvIeVtqtfhOWNzq9ro1ByYCYxI9prYAoehl6CLeDw/exec';
+    let periodsData = null;
+    let currentView = 'agent'; // 'agent' | 'tl'
 
-    var STATE = {
-      page: 'agent',        // 'agent' | 'tl'
-      fy: 'FY 2026-27',
-      period: 'Monthly',
-      quarter: 'Q2',
-      month: 'August',
-      agent: 'All',
-    };
+    document.getElementById('btnAgentView').addEventListener('click', () => switchView('agent'));
+    document.getElementById('btnTLView').addEventListener('click', () => switchView('tl'));
+    document.getElementById('periodType').addEventListener('change', onPeriodTypeChange);
+    document.getElementById('btnRefresh').addEventListener('click', loadCurrentView);
+    document.getElementById('agentSelect').addEventListener('change', loadCurrentView);
 
-    var MONTHS_BY_Q = {
-      Q1: ['April', 'May', 'June'],
-      Q2: ['July', 'August', 'September'],
-      Q3: ['October', 'November', 'December'],
-      Q4: ['January', 'February', 'March'],
-    };
-    var FY_OPTIONS = ['FY 2025-26', 'FY 2026-27'];
-
-    var lastData = null;
-
-    function fmt(n) {
-      n = Math.round(n || 0);
-      return n.toLocaleString('en-IN');
-    }
-    function pct(n) {
-      return (n == null ? 0 : n).toFixed(1) + '%';
-    }
-    function pillClass(achvPct, nearThreshold) {
-      if (achvPct >= 100) return 'achieved';
-      if (achvPct >= (nearThreshold || 85)) return 'near';
-      return 'shortfall';
-    }
-    function pillLabel(cls) {
-      return cls === 'achieved' ? 'Achieved' : cls === 'near' ? 'Near target' : 'Shortfall';
-    }
-    function pillHtml(achvPct, nearThreshold) {
-      var cls = pillClass(achvPct, nearThreshold);
-      return '<span class="pill ' + cls + '"><span class="dot"></span>' + pillLabel(cls) + '</span>';
+    function switchView(view) {
+      currentView = view;
+      document.getElementById('btnAgentView').classList.toggle('active', view === 'agent');
+      document.getElementById('btnTLView').classList.toggle('active', view === 'tl');
+      document.getElementById('agentSelectRow').style.display = view === 'agent' ? 'flex' : 'none';
+      loadCurrentView();
     }
 
-    /* -----------------------------------------------------------
-     * Fetch data from the Apps Script web app's doGet(e) endpoint.
-     * We pass filters as query params; doGet branches on ?api=1 and
-     * returns JSON (see Code.gs).
-     * ----------------------------------------------------------- */
-    function fetchDashboardData(filters, onSuccess, onError) {
-      var params = new URLSearchParams({
-        api: '1',
-        fy: filters.fy,
-        period: filters.period,
-        quarter: filters.quarter,
-        month: filters.month,
-        agent: filters.agent,
-      });
-      fetch(API_URL + '?' + params.toString())
-        .then(function (res) {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          return res.json();
-        })
-        .then(onSuccess)
-        .catch(function (err) {
-          // Fall back to google.script.run when running inside the Apps Script
-          // container itself (same-origin), where fetch() to the exec URL can
-          // be blocked by the sandbox.
-          if (window.google && google.script && google.script.run) {
-            google.script.run
-              .withSuccessHandler(onSuccess)
-              .withFailureHandler(function (e2) { onError(e2); })
-              .getDashboardData(filters);
-          } else {
-            onError(err);
-          }
-        });
+    function onPeriodTypeChange() {
+      populatePeriodValues();
+      loadCurrentView();
     }
 
-    function renderFilterGroup(containerId, options, activeVal, onClick, labelFn) {
-      var el = document.getElementById(containerId);
-      el.innerHTML = '';
-      options.forEach(function (opt) {
-        var btn = document.createElement('button');
-        btn.className = 'filter-btn' + (opt === activeVal ? ' active' : '');
-        btn.innerHTML = labelFn ? labelFn(opt) : opt;
-        btn.onclick = function () { onClick(opt); };
-        el.appendChild(btn);
+    function populatePeriodValues() {
+      const type = document.getElementById('periodType').value;
+      const sel = document.getElementById('periodValue');
+      sel.innerHTML = '';
+      const opts = periodsData[type] || [];
+      // default to latest period
+      opts.slice().reverse().forEach((o, idx) => {
+        const el = document.createElement('option');
+        el.value = o.value;
+        el.textContent = o.label;
+        sel.appendChild(el);
       });
     }
 
-    function renderPageTabs() {
-      document.getElementById('tab-agent').className = 'page-tab' + (STATE.page === 'agent' ? ' active' : '');
-      document.getElementById('tab-tl').className = 'page-tab' + (STATE.page === 'tl' ? ' active' : '');
-      document.getElementById('agent-picker-group').style.display = STATE.page === 'agent' ? '' : 'none';
+    function getCurrentFilter() {
+      return {
+        type: document.getElementById('periodType').value,
+        value: document.getElementById('periodValue').value
+      };
     }
 
-    function renderFilters() {
-      renderPageTabs();
+    function init() {
+      google.script.run.withSuccessHandler(onPeriodsLoaded).withFailureHandler(onError).getAvailablePeriods();
+      google.script.run.withSuccessHandler(onAgentsLoaded).withFailureHandler(onError).getAgentList();
+    }
 
-      renderFilterGroup('fy-filters', FY_OPTIONS, STATE.fy, function (v) {
-        STATE.fy = v; refresh();
+    function onAgentsLoaded(agents) {
+      const sel = document.getElementById('agentSelect');
+      sel.innerHTML = '<option value="__all__">All Agents</option>';
+      agents.forEach(a => {
+        const el = document.createElement('option');
+        el.value = a;
+        el.textContent = a;
+        sel.appendChild(el);
       });
-
-      renderFilterGroup('period-filters', ['Monthly', 'Quarterly', 'Annual'], STATE.period, function (v) {
-        STATE.period = v; refresh();
-      });
-
-      document.getElementById('quarter-group').style.display = STATE.period === 'Annual' ? 'none' : '';
-      document.getElementById('month-group').style.display = STATE.period === 'Monthly' ? '' : 'none';
-
-      renderFilterGroup('quarter-filters', Object.keys(MONTHS_BY_Q), STATE.quarter, function (v) {
-        STATE.quarter = v;
-        STATE.month = MONTHS_BY_Q[v][0];
-        refresh();
-      }, function (q) {
-        var m = MONTHS_BY_Q[q];
-        return q + ' <span class="hint">· ' + m[0].slice(0,3) + '–' + m[2].slice(0,3) + '</span>';
-      });
-
-      renderFilterGroup('month-filters', MONTHS_BY_Q[STATE.quarter], STATE.month, function (v) {
-        STATE.month = v; refresh();
-      });
-
-      if (STATE.page === 'agent') {
-        var agentOptions = ['All'].concat((lastData && lastData.agents) || []);
-        renderFilterGroup('agent-filters', agentOptions, STATE.agent, function (v) {
-          STATE.agent = v; refresh();
-        }, function (a) {
-          return a === 'All' ? 'Select an agent…' : a;
-        });
-      }
     }
 
-    function periodLabel() {
-      if (STATE.period === 'Monthly') return STATE.month + ' · ' + STATE.fy;
-      if (STATE.period === 'Quarterly') return STATE.quarter + ' · ' + STATE.fy;
-      return STATE.fy;
+    function onPeriodsLoaded(periods) {
+      periodsData = periods;
+      populatePeriodValues();
+      loadCurrentView();
     }
 
-    function kpiHtml(label, target, achv, achvPct, shortfall, unit, nearThreshold) {
-      var cls = pillClass(achvPct, nearThreshold);
-      var color = cls === 'achieved' ? 'var(--green)' : cls === 'near' ? 'var(--amber)' : 'var(--red)';
-      return '' +
-        '<div class="kpi" style="border-left-color:' + color + '">' +
-          '<div class="kpi-label">' + label + '</div>' +
-          '<div class="kpi-value-row">' +
-            '<span class="kpi-value">' + pct(achvPct) + '</span>' +
-            pillHtml(achvPct, nearThreshold) +
-          '</div>' +
-          '<div class="kpi-detail">Target ' + target + unit + ' · Achieved ' + achv + unit +
-          (shortfall > 0 ? ' · <span style="color:var(--red)">Shortfall ' + shortfall + unit + '</span>' : '') +
-          '</div>' +
-        '</div>';
+    function onError(err) {
+      document.getElementById('mainContent').innerHTML =
+        '<div class="empty">⚠️ Error loading data: ' + (err.message || err) + '</div>';
     }
 
-    function tableRow(cells, opts) {
-      opts = opts || {};
-      var cls = (opts.total ? 'total-row' : '') + (opts.clickable ? ' clickable-row' : '');
-      var attrs = opts.onClickAgent ? ' data-agent="' + opts.onClickAgent + '"' : '';
-      return '<tr class="' + cls + '"' + attrs + '>' + cells.join('') + '</tr>';
-    }
-    function td(val, opts) {
-      opts = opts || {};
-      var cls = (opts.serif ? 'serif' : '') + (opts.bold ? ' bold' : '');
-      return '<td class="' + cls + '">' + val + '</td>';
-    }
-
-    /* AGENT VIEW */
-    function renderAgentView(data, nearThreshold) {
-      var main = document.getElementById('main-content');
-
-      if (STATE.agent === 'All') {
-        main.innerHTML =
-          '<div class="headrow"><div><div class="title">Agent view</div>' +
-          '<div class="subtitle">Select your name from the Agent list on the left to see your performance.</div></div></div>';
+    function loadCurrentView() {
+      if (!periodsData) return;
+      const filter = getCurrentFilter();
+      if (!filter.value) {
+        document.getElementById('mainContent').innerHTML = '<div class="empty">No data available for this period type.</div>';
         return;
       }
+      document.getElementById('mainContent').innerHTML = '<div class="loading"><div class="spinner"></div>Loading data…</div>';
 
-      var pri = (data.pri || []).find(function (r) { return r.agent === STATE.agent; });
-      var contact = (data.contact || []).find(function (r) { return r.agent === STATE.agent; });
-      var renew = (data.renew || []).find(function (r) { return r.agent === STATE.agent; });
-      var lbo = (data.lbo && data.lbo[STATE.agent]) || 0;
-
-      if (!pri && !contact && !renew) {
-        main.innerHTML =
-          '<div class="headrow"><div><div class="title">' + STATE.agent + '</div>' +
-          '<div class="subtitle">' + periodLabel() + '</div></div></div>' +
-          '<div class="loading">No data found for this agent in the selected period.</div>';
-        return;
-      }
-
-      var kpiStrip = '<div class="kpi-strip">' +
-        (pri ? kpiHtml('PRI calls / day (target 200)', fmt(pri.expected), fmt(pri.totalCalls), pri.achvPct, fmt(pri.shortfall), ' calls', nearThreshold) : '') +
-        (contact ? kpiHtml('Contactable / contacted (≥55%)', fmt(contact.target), fmt(contact.contacted), contact.achvPct, fmt(contact.shortfall), ' users', nearThreshold) : '') +
-        (renew ? kpiHtml('Renew / active (≥55%)', fmt(renew.target), fmt(renew.renewed), renew.achvPct, fmt(renew.shortfall), ' users', nearThreshold) : '') +
-      '</div>';
-
-      var lboBox = '<div class="lbo-box">' +
-        '<span class="lbo-label">LBO shifted to other ISP</span>' +
-        '<span class="lbo-value">' + fmt(lbo) + '</span>' +
-        '<span class="lbo-unit">unique user IDs</span>' +
-      '</div>';
-
-      var priTable = pri ? (
-        '<div class="section-label">PRI call report</div>' +
-        '<table><thead><tr>' +
-          '<th style="text-align:left">Agent</th><th>Total dialed</th><th>Working days</th>' +
-          '<th>Avg / day</th><th>Target / day</th><th>Expected</th><th>Shortfall</th><th>Status</th>' +
-        '</tr></thead><tbody>' +
-        tableRow([
-          td(pri.agent, { serif: true, bold: true }), td(fmt(pri.totalCalls)), td(pri.workingDays),
-          td(fmt(pri.avgCalls)), td(pri.target), td(fmt(pri.expected)),
-          td(pri.shortfall > 0 ? fmt(pri.shortfall) : '—', { bold: true }),
-          td(pillHtml(pri.achvPct, nearThreshold)),
-        ]) +
-        '</tbody></table>'
-      ) : '';
-
-      var contactTable = contact ? (
-        '<div class="section-label">Inactive user contactable calling report</div>' +
-        '<table><thead><tr>' +
-          '<th style="text-align:left">Agent</th><th>Users called</th><th>Contacted</th>' +
-          '<th>Contacted %</th><th>Target (≥55%)</th><th>Shortfall</th><th>Achv %</th><th>Status</th>' +
-        '</tr></thead><tbody>' +
-        tableRow([
-          td(contact.agent, { serif: true, bold: true }), td(fmt(contact.totalUsers)), td(fmt(contact.contacted)),
-          td(pct(contact.contactedPct)), td(fmt(contact.target)),
-          td(contact.shortfall > 0 ? fmt(contact.shortfall) : '—', { bold: true }),
-          td(pct(contact.achvPct)), td(pillHtml(contact.achvPct, nearThreshold)),
-        ]) +
-        '</tbody></table>'
-      ) : '';
-
-      var renewTable = renew ? (
-        '<div class="section-label">Inactive user renew report</div>' +
-        '<table><thead><tr>' +
-          '<th style="text-align:left">Agent</th><th>Users called</th><th>Renewed</th>' +
-          '<th>Renewed %</th><th>Target (≥55%)</th><th>Shortfall</th><th>Achv %</th><th>Status</th>' +
-        '</tr></thead><tbody>' +
-        tableRow([
-          td(renew.agent, { serif: true, bold: true }), td(fmt(renew.totalUsers)), td(fmt(renew.renewed)),
-          td(pct(renew.renewedPct)), td(fmt(renew.target)),
-          td(renew.shortfall > 0 ? fmt(renew.shortfall) : '—', { bold: true }),
-          td(pct(renew.achvPct)), td(pillHtml(renew.achvPct, nearThreshold)),
-        ]) +
-        '</tbody></table>'
-      ) : '';
-
-      main.innerHTML =
-        '<div class="headrow">' +
-          '<div><div class="title">' + STATE.agent + '</div><div class="subtitle">' + periodLabel() + '</div></div>' +
-          '<div class="metainfo"><div>Agent view</div><div>Synced from Google Sheets · live</div></div>' +
-        '</div>' +
-        kpiStrip + lboBox + priTable + contactTable + renewTable +
-        '<div class="footnote">Green ≥100% achieved · Amber ' + nearThreshold + '–99.9% near target · Red &lt;' + nearThreshold + '% shortfall.</div>';
-    }
-
-    /* TL VIEW */
-    function renderTLView(data, nearThreshold) {
-      var main = document.getElementById('main-content');
-      var priRows = data.pri || [];
-      var contactRows = data.contact || [];
-      var renewRows = data.renew || [];
-      var totals = data.totals || {};
-
-      var kpiStrip = '<div class="kpi-strip">' +
-        kpiHtml('PRI calls / day (target 200)', fmt(totals.pri.expected), fmt(totals.pri.totalCalls), totals.pri.achvPct || 0, fmt(totals.pri.shortfall), ' calls', nearThreshold) +
-        kpiHtml('Contactable / contacted (≥55%)', fmt(totals.contact.target), fmt(totals.contact.contacted), totals.contact.achvPct || 0, fmt(totals.contact.shortfall), ' users', nearThreshold) +
-        kpiHtml('Renew / active (≥55%)', fmt(totals.renew.target), fmt(totals.renew.renewed), totals.renew.achvPct || 0, fmt(totals.renew.shortfall), ' users', nearThreshold) +
-      '</div>';
-
-      var lboBox = '<div class="lbo-box">' +
-        '<span class="lbo-label">LBO shifted to other ISP</span>' +
-        '<span class="lbo-value">' + fmt(totals.lbo) + '</span>' +
-        '<span class="lbo-unit">unique user IDs</span>' +
-      '</div>';
-
-      var byAgent = {};
-      priRows.forEach(function (r) { byAgent[r.agent] = byAgent[r.agent] || {}; byAgent[r.agent].pri = r; });
-      contactRows.forEach(function (r) { byAgent[r.agent] = byAgent[r.agent] || {}; byAgent[r.agent].contact = r; });
-      renewRows.forEach(function (r) { byAgent[r.agent] = byAgent[r.agent] || {}; byAgent[r.agent].renew = r; });
-
-      var agentCompareRows = Object.keys(byAgent).map(function (agentName) {
-        var a = byAgent[agentName];
-        return tableRow([
-          td(agentName, { serif: true, bold: true }),
-          td(a.pri ? pct(a.pri.achvPct) : '—'),
-          td(a.pri && a.pri.shortfall > 0 ? fmt(a.pri.shortfall) : '—'),
-          td(a.contact ? pct(a.contact.achvPct) : '—'),
-          td(a.contact && a.contact.shortfall > 0 ? fmt(a.contact.shortfall) : '—'),
-          td(a.renew ? pct(a.renew.achvPct) : '—'),
-          td(a.renew && a.renew.shortfall > 0 ? fmt(a.renew.shortfall) : '—'),
-        ], { clickable: true, onClickAgent: agentName });
-      }).join('');
-
-      var compareTable =
-        '<div class="section-label">Agent-level comparison</div>' +
-        '<table><thead><tr>' +
-          '<th style="text-align:left">Agent</th><th>PRI Achv %</th><th>PRI Shortfall</th>' +
-          '<th>Contactable Achv %</th><th>Contactable Shortfall</th>' +
-          '<th>Renew Achv %</th><th>Renew Shortfall</th>' +
-        '</tr></thead><tbody>' +
-        agentCompareRows +
-        tableRow([
-          td('TL total', { serif: true, bold: true }),
-          td(pct(totals.pri.achvPct || 0)), td(totals.pri.shortfall > 0 ? fmt(totals.pri.shortfall) : '—'),
-          td(pct(totals.contact.achvPct || 0)), td(totals.contact.shortfall > 0 ? fmt(totals.contact.shortfall) : '—'),
-          td(pct(totals.renew.achvPct || 0)), td(totals.renew.shortfall > 0 ? fmt(totals.renew.shortfall) : '—'),
-        ], { total: true }) +
-        '</tbody></table>';
-
-      main.innerHTML =
-        '<div class="headrow">' +
-          '<div><div class="title">TL view — Team performance</div><div class="subtitle">' + periodLabel() + '</div></div>' +
-          '<div class="metainfo"><div>1 Team Leader · 5 Agents</div><div>Synced from Google Sheets · live</div></div>' +
-        '</div>' +
-        kpiStrip + lboBox + compareTable +
-        '<div class="footnote">Click an agent row to open their detail on Agent View. Green ≥100% achieved · Amber ' + nearThreshold + '–99.9% near target · Red &lt;' + nearThreshold + '% shortfall.</div>';
-
-      Array.prototype.forEach.call(main.querySelectorAll('tr[data-agent]'), function (row) {
-        row.addEventListener('click', function () {
-          STATE.page = 'agent';
-          STATE.agent = row.getAttribute('data-agent');
-          refresh();
-        });
-      });
-    }
-
-    function render(data) {
-      var main = document.getElementById('main-content');
-      if (data.error) {
-        main.innerHTML = '<div class="error-box">' + data.error + '</div>';
-        return;
-      }
-      lastData = data;
-      var nearThreshold = (data.config && data.config.nearTargetThreshold) || 85;
-      renderFilters();
-      if (STATE.page === 'agent') {
-        renderAgentView(data, nearThreshold);
+      if (currentView === 'agent') {
+        Promise.all([
+          runAsync('getPRIReport', filter),
+          runAsync('getContactabilityReport', filter),
+          runAsync('getRenewReport', filter)
+        ]).then(([pri, contact, renew]) => renderAgentView(pri, contact, renew)).catch(onError);
       } else {
-        renderTLView(data, nearThreshold);
+        runAsync('getTLReport', filter).then(renderTLView).catch(onError);
       }
     }
 
-    function refresh() {
-      renderFilters();
-      document.getElementById('main-content').innerHTML = '<div class="loading">Loading dashboard data…</div>';
-      fetchDashboardData(STATE, render, function (err) {
-        document.getElementById('main-content').innerHTML =
-          '<div class="error-box">Failed to load data: ' + (err && err.message ? err.message : err) + '</div>';
+    function runAsync(fnName, arg) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          [fnName](arg);
       });
     }
 
-    document.getElementById('tab-agent').onclick = function () { STATE.page = 'agent'; refresh(); };
-    document.getElementById('tab-tl').onclick = function () { STATE.page = 'tl'; refresh(); };
+    function filterByAgent(rows) {
+      const sel = document.getElementById('agentSelect').value;
+      if (!sel || sel === '__all__') return rows;
+      return rows.filter(r => r.agentName === sel);
+    }
 
-    renderFilters();
-    refresh();
+    function pct(v) { return (v === undefined || v === null) ? '-' : v.toFixed(2) + '%'; }
+    function num(v) { return (v === undefined || v === null) ? '-' : v.toLocaleString(); }
+
+    function renderAgentView(pri, contact, renew) {
+      pri = filterByAgent(pri);
+      contact = filterByAgent(contact);
+      renew = filterByAgent(renew);
+
+      let html = '';
+
+      // Summary cards (totals across shown agents)
+      const totalCalls = pri.reduce((s, r) => s + r.totalCallsDialed, 0);
+      const totalShortfall = pri.reduce((s, r) => s + r.totalCallShortfall, 0);
+      const avgContactPct = contact.length ? (contact.reduce((s, r) => s + r.contactedUserCountPct, 0) / contact.length) : 0;
+      const avgRenewPct = renew.length ? (renew.reduce((s, r) => s + r.renewUserCountPct, 0) / renew.length) : 0;
+
+      html += '<div class="cards">';
+      html += cardHtml('Total Calls Dialed', num(totalCalls), '', 'green');
+      html += cardHtml('Total Call Shortfall', num(totalShortfall), 'vs. 200/day target', totalShortfall > 0 ? 'red' : 'green');
+      html += cardHtml('Avg Contacted %', pct(avgContactPct), 'Target ≥55%', avgContactPct >= 55 ? 'green' : 'red');
+      html += cardHtml('Avg Renew %', pct(avgRenewPct), 'Target ≥55%', avgRenewPct >= 55 ? 'green' : 'red');
+      html += '</div>';
+
+      // PRI Table
+      html += '<section class="panel"><h2>📞 PRI Call Report</h2><div class="table-wrap"><table>';
+      html += '<tr><th>Agent</th><th>Total Calls Dialed</th><th>Working Days</th><th>Avg Calls/Day</th><th>Target/Day</th><th>Expected Total</th><th>Shortfall</th></tr>';
+      pri.forEach(r => {
+        html += `<tr>
+          <td>${esc(r.agentName)}</td>
+          <td>${num(r.totalCallsDialed)}</td>
+          <td>${num(r.workingDays)}</td>
+          <td>${r.avgCallsPerDay}</td>
+          <td>${r.targetCallsPerDay}</td>
+          <td>${num(r.expectedTotalCalls)}</td>
+          <td>${badge(r.totalCallShortfall === 0, num(r.totalCallShortfall))}</td>
+        </tr>`;
+      });
+      if (pri.length === 0) html += emptyRow(7);
+      html += '</table></div></section>';
+
+      // Contactability Table
+      html += '<section class="panel"><h2>☎️ Inactive User Contactable Calling Report</h2><div class="table-wrap"><table>';
+      html += '<tr><th>Agent</th><th>Total User ID Called</th><th>Contacted Count</th><th>Contacted %</th><th>Target (≥55%)</th><th>Shortfall</th><th>Achievement Count</th><th>Achievement %</th></tr>';
+      contact.forEach(r => {
+        html += `<tr>
+          <td>${esc(r.agentName)}</td>
+          <td>${num(r.totalUserIdCalled)}</td>
+          <td>${num(r.contactedUserCount)}</td>
+          <td>${pct(r.contactedUserCountPct)}</td>
+          <td>${num(r.targetContactedUserCount)}</td>
+          <td>${badge(r.shortfallCount === 0, num(r.shortfallCount))}</td>
+          <td>${num(r.achievementCount)}</td>
+          <td>${badge(r.achievementPct >= 100, pct(r.achievementPct))}</td>
+        </tr>`;
+      });
+      if (contact.length === 0) html += emptyRow(8);
+      html += '</table></div></section>';
+
+      // Renew Table
+      html += '<section class="panel"><h2>🔄 Inactive User Renew Report</h2><div class="table-wrap"><table>';
+      html += '<tr><th>Agent</th><th>Total User ID Called (Excl. LBO)</th><th>Contacted Renew Count</th><th>Renew %</th><th>Target (≥55%)</th><th>Renew Shortfall</th><th>Achievement Count</th><th>Achievement %</th></tr>';
+      renew.forEach(r => {
+        html += `<tr>
+          <td>${esc(r.agentName)}</td>
+          <td>${num(r.totalUserIdCalled)}</td>
+          <td>${num(r.contactedRenewUserCount)}</td>
+          <td>${pct(r.renewUserCountPct)}</td>
+          <td>${num(r.targetRenewUserCount)}</td>
+          <td>${badge(r.renewShortfall === 0, num(r.renewShortfall))}</td>
+          <td>${num(r.achievementCount)}</td>
+          <td>${badge(r.achievementPct >= 100, pct(r.achievementPct))}</td>
+        </tr>`;
+      });
+      if (renew.length === 0) html += emptyRow(8);
+      html += '</table></div></section>';
+
+      document.getElementById('mainContent').innerHTML = html;
+    }
+
+    function renderTLView(data) {
+      let html = '';
+
+      html += '<div class="cards">';
+      html += cardHtml('Total User ID Called', num(data.summary.totalUserIdCalled), '', 'green');
+      html += cardHtml('Total Calls Dialed', num(data.summary.totalCallsDialed), 'Working Days: ' + num(data.summary.totalWorkingDays), 'green');
+      html += cardHtml('Call Shortfall', num(data.summary.callShortfall), 'vs expected ' + num(data.summary.expectedTotalCalls), data.summary.callShortfall > 0 ? 'red' : 'green');
+      html += cardHtml('LBO Shifted to Other ISP', num(data.lboShiftedCount), 'Unique User IDs', 'yellow');
+      html += '</div>';
+
+      html += '<section class="panel"><h2>📊 Team Performance Summary</h2><div class="table-wrap"><table>';
+      html += '<tr><th>Call Type</th><th>Target</th><th>Actual</th><th>Achievement %</th><th>Target − Achievement (Shortfall)</th></tr>';
+      html += `<tr>
+        <td>Contactable / Contacted</td>
+        <td>${data.contactable.target}</td>
+        <td>${num(data.contactable.actual)}</td>
+        <td>${badge(data.contactable.achievementPct >= 100, pct(data.contactable.achievementPct))}</td>
+        <td>${badge(data.contactable.shortfall === 0, num(data.contactable.shortfall))}</td>
+      </tr>`;
+      html += `<tr>
+        <td>Renew / Active</td>
+        <td>${data.renew.target}</td>
+        <td>${num(data.renew.actual)}</td>
+        <td>${badge(data.renew.achievementPct >= 100, pct(data.renew.achievementPct))}</td>
+        <td>${badge(data.renew.shortfall === 0, num(data.renew.shortfall))}</td>
+      </tr>`;
+      html += '</table></div></section>';
+
+      // Agent breakdown tables (reuse same rendering logic)
+      html += '<section class="panel"><h2>👥 Agent Breakdown — PRI Call Report</h2><div class="table-wrap"><table>';
+      html += '<tr><th>Agent</th><th>Total Calls Dialed</th><th>Working Days</th><th>Avg Calls/Day</th><th>Target/Day</th><th>Expected Total</th><th>Shortfall</th></tr>';
+      data.agentBreakdown.pri.forEach(r => {
+        html += `<tr>
+          <td>${esc(r.agentName)}</td>
+          <td>${num(r.totalCallsDialed)}</td>
+          <td>${num(r.workingDays)}</td>
+          <td>${r.avgCallsPerDay}</td>
+          <td>${r.targetCallsPerDay}</td>
+          <td>${num(r.expectedTotalCalls)}</td>
+          <td>${badge(r.totalCallShortfall === 0, num(r.totalCallShortfall))}</td>
+        </tr>`;
+      });
+      if (data.agentBreakdown.pri.length === 0) html += emptyRow(7);
+      html += '</table></div></section>';
+
+      html += '<section class="panel"><h2>👥 Agent Breakdown — Contactability</h2><div class="table-wrap"><table>';
+      html += '<tr><th>Agent</th><th>Total User ID Called</th><th>Contacted Count</th><th>Contacted %</th><th>Target (≥55%)</th><th>Shortfall</th><th>Achievement %</th></tr>';
+      data.agentBreakdown.contactability.forEach(r => {
+        html += `<tr>
+          <td>${esc(r.agentName)}</td>
+          <td>${num(r.totalUserIdCalled)}</td>
+          <td>${num(r.contactedUserCount)}</td>
+          <td>${pct(r.contactedUserCountPct)}</td>
+          <td>${num(r.targetContactedUserCount)}</td>
+          <td>${badge(r.shortfallCount === 0, num(r.shortfallCount))}</td>
+          <td>${badge(r.achievementPct >= 100, pct(r.achievementPct))}</td>
+        </tr>`;
+      });
+      if (data.agentBreakdown.contactability.length === 0) html += emptyRow(7);
+      html += '</table></div></section>';
+
+      html += '<section class="panel"><h2>👥 Agent Breakdown — Renew Report</h2><div class="table-wrap"><table>';
+      html += '<tr><th>Agent</th><th>Total User ID Called</th><th>Contacted Renew</th><th>Renew %</th><th>Target (≥55%)</th><th>Shortfall</th><th>Achievement %</th></tr>';
+      data.agentBreakdown.renew.forEach(r => {
+        html += `<tr>
+          <td>${esc(r.agentName)}</td>
+          <td>${num(r.totalUserIdCalled)}</td>
+          <td>${num(r.contactedRenewUserCount)}</td>
+          <td>${pct(r.renewUserCountPct)}</td>
+          <td>${num(r.targetRenewUserCount)}</td>
+          <td>${badge(r.renewShortfall === 0, num(r.renewShortfall))}</td>
+          <td>${badge(r.achievementPct >= 100, pct(r.achievementPct))}</td>
+        </tr>`;
+      });
+      if (data.agentBreakdown.renew.length === 0) html += emptyRow(7);
+      html += '</table></div></section>';
+
+      document.getElementById('mainContent').innerHTML = html;
+    }
+
+    function cardHtml(label, value, sub, cls) {
+      return `<div class="card ${cls || ''}">
+        <div class="label">${label}</div>
+        <div class="value">${value}</div>
+        ${sub ? '<div class="sub">' + sub + '</div>' : ''}
+      </div>`;
+    }
+
+    function badge(isGood, text) {
+      return '<span class="pill ' + (isGood ? 'ok' : 'bad') + '">' + text + '</span>';
+    }
+
+    function emptyRow(colspan) {
+      return '<tr><td colspan="' + colspan + '" style="text-align:center;color:var(--muted);">No data for this period</td></tr>';
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    init();
   </script>
 </body>
 </html>
