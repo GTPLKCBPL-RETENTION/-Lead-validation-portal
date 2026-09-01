@@ -250,7 +250,6 @@
 <div class="tabs">
   <div class="tab active" data-view="tl">TL view</div>
   <div class="tab" data-view="agent">Agent view</div>
-  <div class="tab" data-view="calltype">Call Type &amp; Reason</div>
   <div class="tab" data-view="mgmtsummary">Management Summary</div>
 </div>
 
@@ -332,75 +331,6 @@
             <th class="num">Shortfall</th><th class="num">Status</th>
           </tr></thead>
           <tbody id="agent-renew-body"></tbody>
-        </table>
-      </div>
-
-    </div>
-
-    <!-- CALL TYPE & REASON VIEW -->
-    <div class="view" id="view-calltype">
-
-      <div class="section-title">Contactable calls <span class="tag">Call Type — agent-wise</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr id="ct-contactable-head"></tr></thead>
-          <tbody id="ct-contactable-body"></tbody>
-        </table>
-      </div>
-
-      <div class="section-title">Renew calls <span class="tag">Call Type — agent-wise</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr id="ct-renew-head"></tr></thead>
-          <tbody id="ct-renew-body"></tbody>
-        </table>
-      </div>
-
-      <div class="section-title">Contactable — Reason-wise breakdown <span class="tag">TL summary</span></div>
-      <div class="kpi-grid" id="reason-contactable-kpis"></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Reason</th><th class="num">Active</th><th class="num">Active %</th>
-            <th class="num">Inactive+Suspended</th><th class="num">Grand Total</th>
-          </tr></thead>
-          <tbody id="reason-contactable-tl-body"></tbody>
-        </table>
-      </div>
-
-      <div class="section-title">Contactable — Reason-wise breakdown <span class="tag">Agent-wise</span></div>
-      <select id="reason-contactable-agent-select" class="inline-select" onchange="renderReasonAgentTable('contactable', this.value)"></select>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Reason</th><th class="num">Active</th><th class="num">Active %</th>
-            <th class="num">Inactive+Suspended</th><th class="num">Grand Total</th>
-          </tr></thead>
-          <tbody id="reason-contactable-agent-body"></tbody>
-        </table>
-      </div>
-
-      <div class="section-title">Renew — Reason-wise breakdown <span class="tag">TL summary</span></div>
-      <div class="kpi-grid" id="reason-renew-kpis"></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Reason</th><th class="num">Renewed (Active)</th><th class="num">Renewed %</th>
-            <th class="num">Not Renewed</th><th class="num">Grand Total</th>
-          </tr></thead>
-          <tbody id="reason-renew-tl-body"></tbody>
-        </table>
-      </div>
-
-      <div class="section-title">Renew — Reason-wise breakdown <span class="tag">Agent-wise</span></div>
-      <select id="reason-renew-agent-select" class="inline-select" onchange="renderReasonAgentTable('renew', this.value)"></select>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Reason</th><th class="num">Renewed (Active)</th><th class="num">Renewed %</th>
-            <th class="num">Not Renewed</th><th class="num">Grand Total</th>
-          </tr></thead>
-          <tbody id="reason-renew-agent-body"></tbody>
         </table>
       </div>
 
@@ -699,19 +629,6 @@ async function loadData(){
     renderPriRows("agent-pri-body", data.pri.agents);
     renderContactOrRenewRows("agent-contactable-body", data.contactable.agents, "contactable");
     renderContactOrRenewRows("agent-renew-body", data.renew.agents, "renew");
-
-    renderTypeOfCallTable("ct-contactable-head", "ct-contactable-body", data.contactableTypeOfCall);
-    renderTypeOfCallTable("ct-renew-head", "ct-renew-body", data.renewTypeOfCall);
-
-    renderReasonKpis("reason-contactable-kpis", data.contactableReasonBreakdown && data.contactableReasonBreakdown.tl);
-    renderReasonTable("reason-contactable-tl-body", data.contactableReasonBreakdown && data.contactableReasonBreakdown.tl.reasons);
-    populateAgentSelect("reason-contactable-agent-select", data.contactableReasonBreakdown && data.contactableReasonBreakdown.agents);
-    renderReasonAgentTable("contactable", document.getElementById("reason-contactable-agent-select").value);
-
-    renderReasonKpis("reason-renew-kpis", data.renewReasonBreakdown && data.renewReasonBreakdown.tl);
-    renderReasonTable("reason-renew-tl-body", data.renewReasonBreakdown && data.renewReasonBreakdown.tl.reasons);
-    populateAgentSelect("reason-renew-agent-select", data.renewReasonBreakdown && data.renewReasonBreakdown.agents);
-    renderReasonAgentTable("renew", document.getElementById("reason-renew-agent-select").value);
 
     renderMgmtSummaryKpis("mgmt-summary-kpis", data.renewReasonBreakdown && data.renewReasonBreakdown.tl);
     renderReasonTable("mgmt-summary-reason-body", data.renewReasonBreakdown && data.renewReasonBreakdown.tl.reasons);
