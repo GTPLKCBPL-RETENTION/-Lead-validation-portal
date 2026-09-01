@@ -251,6 +251,7 @@
   <div class="tab active" data-view="tl">TL view</div>
   <div class="tab" data-view="agent">Agent view</div>
   <div class="tab" data-view="calltype">Call Type &amp; Reason</div>
+  <div class="tab" data-view="mgmtsummary">Management Summary</div>
 </div>
 
 <main>
@@ -272,42 +273,24 @@
     <!-- TL VIEW -->
     <div class="view active" id="view-tl">
 
-      <div class="section-title">Team summary <span class="tag">All 5 agents</span></div>
+      <div class="section-title">Team summary <span class="tag">All agents</span></div>
       <div class="kpi-grid" id="tl-kpi-grid"></div>
 
-      <div class="section-title">PRI call report</div>
+      <div class="section-title">Agent-wise summary <span class="tag">Call Type &middot; Contactable &middot; Renew</span></div>
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>Agent</th><th class="num">Calls dialed</th><th class="num">Working days</th>
-            <th class="num">Avg/day</th><th class="num">Target/day</th>
-            <th class="num">Expected total</th><th class="num">Shortfall</th>
+            <th>Agent</th>
+            <th class="num">Total Called</th>
+            <th class="num">Inactive</th>
+            <th class="num">Suspend</th>
+            <th class="num">Upcoming</th>
+            <th class="num">Contactable</th>
+            <th class="num">Contactable %</th>
+            <th class="num">Renew</th>
+            <th class="num">Renew %</th>
           </tr></thead>
-          <tbody id="tl-pri-body"></tbody>
-        </table>
-      </div>
-
-      <div class="section-title">Contactable calling report <span class="tag">Target &ge;55%</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Agent</th><th class="num">Total called</th><th class="num">Contacted</th>
-            <th class="num">Contacted %</th><th class="num">Target</th>
-            <th class="num">Shortfall</th><th class="num">Status</th>
-          </tr></thead>
-          <tbody id="tl-contactable-body"></tbody>
-        </table>
-      </div>
-
-      <div class="section-title">Renew report <span class="tag">Target &ge;55%</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr>
-            <th>Agent</th><th class="num">Total called</th><th class="num">Renewed</th>
-            <th class="num">Renewed %</th><th class="num">Target</th>
-            <th class="num">Shortfall</th><th class="num">Status</th>
-          </tr></thead>
-          <tbody id="tl-renew-body"></tbody>
+          <tbody id="tl-agent-summary-body"></tbody>
         </table>
       </div>
 
@@ -423,6 +406,25 @@
 
     </div>
 
+    <!-- MANAGEMENT SUMMARY VIEW -->
+    <div class="view" id="view-mgmtsummary">
+
+      <div class="section-title">Renew Report — Management Summary <span class="tag">All agents combined</span></div>
+      <div class="kpi-grid" id="mgmt-summary-kpis"></div>
+
+      <div class="section-title">Reason-wise Renew / Active breakdown</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Reason</th><th class="num">Renewed (Active)</th><th class="num">Renewed %</th>
+            <th class="num">Not Renewed</th><th class="num">Grand Total</th>
+          </tr></thead>
+          <tbody id="mgmt-summary-reason-body"></tbody>
+        </table>
+      </div>
+
+    </div>
+
   </div>
 
 </main>
@@ -490,6 +492,28 @@ function renderReasonTable(bodyId, reasons){
       <td class="num">${fmtNum(r.grandTotal)}</td>
     </tr>
   `).join("");
+}
+
+function renderMgmtSummaryKpis(gridId, breakdown){
+  const grid = document.getElementById(gridId);
+  if(!breakdown){ grid.innerHTML = ""; return; }
+  grid.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Total Count</div>
+      <div class="kpi-value">${fmtNum(breakdown.totalCalled)}</div>
+      <div class="kpi-sub">Unique User IDs called (Renew report)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Not Contactable</div>
+      <div class="kpi-value shortfall">${fmtNum(breakdown.notContactableCount)}</div>
+      <div class="kpi-sub">Call back later / LBO no / No response / Wrong number</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Renewed (Active)</div>
+      <div class="kpi-value good">${fmtNum(breakdown.grandTotal ? breakdown.grandTotal.activeCount : 0)}</div>
+      <div class="kpi-sub">${fmtPct(breakdown.grandTotal ? breakdown.grandTotal.activePct : 0)} of contacted</div>
+    </div>
+  `;
 }
 
 function renderReasonKpis(gridId, breakdown){
@@ -591,6 +615,30 @@ function renderContactOrRenewRows(bodyId, agents, mode){
   `).join("");
 }
 
+/* New combined TL agent-wise summary table:
+   Agent | Total Called | Inactive | Suspend | Upcoming | Contactable | Contactable % | Renew | Renew % */
+function renderTlAgentSummaryRows(bodyId, agents){
+  const body = document.getElementById(bodyId);
+  const list = agents || [];
+  if(!list.length){
+    body.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--slate-light)">No data</td></tr>`;
+    return;
+  }
+  body.innerHTML = list.map(a=>`
+    <tr>
+      <td class="agent-name">${escapeHtml(a.agentName)}</td>
+      <td class="num">${fmtNum(a.totalCalled)}</td>
+      <td class="num">${fmtNum(a.inactiveCount)}</td>
+      <td class="num">${fmtNum(a.suspendCount)}</td>
+      <td class="num">${fmtNum(a.upcomingCount)}</td>
+      <td class="num">${fmtNum(a.contactableCount)}</td>
+      <td class="num">${fmtPct(a.contactablePct)}</td>
+      <td class="num">${fmtNum(a.renewCount)}</td>
+      <td class="num">${fmtPct(a.renewPct)}</td>
+    </tr>
+  `).join("");
+}
+
 function renderTlKpis(data){
   const grid = document.getElementById("tl-kpi-grid");
   const tl = data.tl;
@@ -646,9 +694,7 @@ async function loadData(){
     populateMonthDropdown(data.availableMonths, data.selectedMonth);
 
     renderTlKpis(data);
-    renderPriRows("tl-pri-body", data.pri.agents);
-    renderContactOrRenewRows("tl-contactable-body", data.contactable.agents, "contactable");
-    renderContactOrRenewRows("tl-renew-body", data.renew.agents, "renew");
+    renderTlAgentSummaryRows("tl-agent-summary-body", data.tlAgentSummary && data.tlAgentSummary.agents);
 
     renderPriRows("agent-pri-body", data.pri.agents);
     renderContactOrRenewRows("agent-contactable-body", data.contactable.agents, "contactable");
@@ -666,6 +712,9 @@ async function loadData(){
     renderReasonTable("reason-renew-tl-body", data.renewReasonBreakdown && data.renewReasonBreakdown.tl.reasons);
     populateAgentSelect("reason-renew-agent-select", data.renewReasonBreakdown && data.renewReasonBreakdown.agents);
     renderReasonAgentTable("renew", document.getElementById("reason-renew-agent-select").value);
+
+    renderMgmtSummaryKpis("mgmt-summary-kpis", data.renewReasonBreakdown && data.renewReasonBreakdown.tl);
+    renderReasonTable("mgmt-summary-reason-body", data.renewReasonBreakdown && data.renewReasonBreakdown.tl.reasons);
 
     const monthLabel = data.selectedMonth === "all" ? "All months" : data.selectedMonth;
     document.getElementById("last-updated").textContent =
