@@ -279,7 +279,7 @@
           <thead><tr>
             <th>Agent</th><th class="num">Total called</th><th class="num">Contacted</th>
             <th class="num">Contacted %</th><th class="num">Target</th>
-            <th class="num">Shortfall</th><th class="num">Achievement %</th>
+            <th class="num">Shortfall</th><th class="num">Status</th>
           </tr></thead>
           <tbody id="tl-contactable-body"></tbody>
         </table>
@@ -291,7 +291,7 @@
           <thead><tr>
             <th>Agent</th><th class="num">Total called</th><th class="num">Renewed</th>
             <th class="num">Renewed %</th><th class="num">Target</th>
-            <th class="num">Shortfall</th><th class="num">Achievement %</th>
+            <th class="num">Shortfall</th><th class="num">Status</th>
           </tr></thead>
           <tbody id="tl-renew-body"></tbody>
         </table>
@@ -320,7 +320,7 @@
           <thead><tr>
             <th>Agent</th><th class="num">Total called</th><th class="num">Contacted</th>
             <th class="num">Contacted %</th><th class="num">Target</th>
-            <th class="num">Shortfall</th><th class="num">Achievement %</th>
+            <th class="num">Shortfall</th><th class="num">Status</th>
           </tr></thead>
           <tbody id="agent-contactable-body"></tbody>
         </table>
@@ -332,7 +332,7 @@
           <thead><tr>
             <th>Agent</th><th class="num">Total called</th><th class="num">Renewed</th>
             <th class="num">Renewed %</th><th class="num">Target</th>
-            <th class="num">Shortfall</th><th class="num">Achievement %</th>
+            <th class="num">Shortfall</th><th class="num">Status</th>
           </tr></thead>
           <tbody id="agent-renew-body"></tbody>
         </table>
@@ -372,12 +372,12 @@ function fmtPct(n){
   if(n===undefined || n===null || isNaN(n)) return "—";
   return Number(n).toFixed(2) + "%";
 }
-function achievementBadge(pct){
-  if(pct===undefined || pct===null || isNaN(pct)) return "";
-  let cls = "bad";
-  if(pct>=100) cls="good";
-  else if(pct>=75) cls="warn";
-  return `<span class="badge ${cls}">${fmtPct(pct)}</span>`;
+function statusBadge(actualPct, targetPct){
+  if(actualPct===undefined || actualPct===null || isNaN(actualPct)) return "";
+  let cls = "bad", label = "Below target";
+  if(actualPct>=targetPct){ cls="good"; label="On target"; }
+  else if(actualPct>=targetPct*0.75){ cls="warn"; label="Near target"; }
+  return `<span class="badge ${cls}">${label}</span>`;
 }
 
 function renderPriRows(bodyId, agents){
@@ -395,6 +395,8 @@ function renderPriRows(bodyId, agents){
   `).join("");
 }
 
+const TARGET_PCT_DISPLAY = 55;
+
 function renderContactOrRenewRows(bodyId, agents, mode){
   const body = document.getElementById(bodyId);
   const countField = mode==="contactable" ? "contactedUserCount" : "contactedRenewUserCount";
@@ -407,7 +409,7 @@ function renderContactOrRenewRows(bodyId, agents, mode){
       <td class="num">${fmtPct(a[pctField])}</td>
       <td class="num">${fmtNum(a.targetCount)}</td>
       <td class="num" style="color:${a.shortfall>0?'var(--red)':'var(--green)'}">${fmtNum(a.shortfall)}</td>
-      <td class="num">${achievementBadge(a.achievementPct)}</td>
+      <td class="num">${statusBadge(a[pctField], TARGET_PCT_DISPLAY)}</td>
     </tr>
   `).join("");
 }
@@ -422,14 +424,14 @@ function renderTlKpis(data){
       <div class="kpi-sub">Shortfall: <span style="color:${tl.pri.shortfall>0?'var(--red)':'var(--green)'}">${fmtNum(tl.pri.shortfall)}</span></div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Contactable achievement</div>
-      <div class="kpi-value">${fmtPct(tl.contactable.achievementPct)}</div>
-      <div class="kpi-sub">${fmtNum(tl.contactable.actualCount)} of ${fmtNum(tl.contactable.totalUserIdCalled)} contacted</div>
+      <div class="kpi-label">Contactable %</div>
+      <div class="kpi-value ${tl.contactable.actualPct>=55?'good':'shortfall'}">${fmtPct(tl.contactable.actualPct)}</div>
+      <div class="kpi-sub">${fmtNum(tl.contactable.actualCount)} of ${fmtNum(tl.contactable.totalUserIdCalled)} contacted &middot; Target 55%</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Renew achievement</div>
-      <div class="kpi-value">${fmtPct(tl.renew.achievementPct)}</div>
-      <div class="kpi-sub">${fmtNum(tl.renew.actualCount)} of ${fmtNum(tl.renew.totalUserIdCalled)} renewed</div>
+      <div class="kpi-label">Renew %</div>
+      <div class="kpi-value ${tl.renew.actualPct>=55?'good':'shortfall'}">${fmtPct(tl.renew.actualPct)}</div>
+      <div class="kpi-sub">${fmtNum(tl.renew.actualCount)} of ${fmtNum(tl.renew.totalUserIdCalled)} renewed &middot; Target 55%</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">LBO shifted to other ISP</div>
