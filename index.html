@@ -182,6 +182,16 @@
   td.num{ text-align:right; font-variant-numeric:tabular-nums; }
   .table-wrap{ overflow-x:auto; }
 
+  .inline-select{
+    font-size:13px;
+    padding:7px 10px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--card);
+    color:var(--ink);
+    margin-bottom:12px;
+  }
+
   .state-msg{
     text-align:center;
     padding:60px 20px;
@@ -240,6 +250,7 @@
 <div class="tabs">
   <div class="tab active" data-view="tl">TL view</div>
   <div class="tab" data-view="agent">Agent view</div>
+  <div class="tab" data-view="calltype">Call Type &amp; Reason</div>
 </div>
 
 <main>
@@ -343,6 +354,75 @@
 
     </div>
 
+    <!-- CALL TYPE & REASON VIEW -->
+    <div class="view" id="view-calltype">
+
+      <div class="section-title">Contactable calls <span class="tag">Call Type — agent-wise</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr id="ct-contactable-head"></tr></thead>
+          <tbody id="ct-contactable-body"></tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Renew calls <span class="tag">Call Type — agent-wise</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr id="ct-renew-head"></tr></thead>
+          <tbody id="ct-renew-body"></tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Contactable — Reason-wise breakdown <span class="tag">TL summary</span></div>
+      <div class="kpi-grid" id="reason-contactable-kpis"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Reason</th><th class="num">Active</th><th class="num">Active %</th>
+            <th class="num">Inactive+Suspended</th><th class="num">Grand Total</th>
+          </tr></thead>
+          <tbody id="reason-contactable-tl-body"></tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Contactable — Reason-wise breakdown <span class="tag">Agent-wise</span></div>
+      <select id="reason-contactable-agent-select" class="inline-select" onchange="renderReasonAgentTable('contactable', this.value)"></select>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Reason</th><th class="num">Active</th><th class="num">Active %</th>
+            <th class="num">Inactive+Suspended</th><th class="num">Grand Total</th>
+          </tr></thead>
+          <tbody id="reason-contactable-agent-body"></tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Renew — Reason-wise breakdown <span class="tag">TL summary</span></div>
+      <div class="kpi-grid" id="reason-renew-kpis"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Reason</th><th class="num">Renewed (Active)</th><th class="num">Renewed %</th>
+            <th class="num">Not Renewed</th><th class="num">Grand Total</th>
+          </tr></thead>
+          <tbody id="reason-renew-tl-body"></tbody>
+        </table>
+      </div>
+
+      <div class="section-title">Renew — Reason-wise breakdown <span class="tag">Agent-wise</span></div>
+      <select id="reason-renew-agent-select" class="inline-select" onchange="renderReasonAgentTable('renew', this.value)"></select>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Reason</th><th class="num">Renewed (Active)</th><th class="num">Renewed %</th>
+            <th class="num">Not Renewed</th><th class="num">Grand Total</th>
+          </tr></thead>
+          <tbody id="reason-renew-agent-body"></tbody>
+        </table>
+      </div>
+
+    </div>
+
   </div>
 
 </main>
@@ -358,6 +438,7 @@ const POLL_INTERVAL_MS = 60000; // refresh every 60s
 
 let pollTimer = null;
 let selectedMonth = null; // null = let backend pick latest month; "all" = combined
+let lastData = null; // last successful API response, used for agent-select re-renders
 
 function onMonthChange(value){
   selectedMonth = value;
@@ -371,6 +452,84 @@ function populateMonthDropdown(availableMonths, currentSelection){
   sel.innerHTML = options.join("");
   sel.value = currentSelection || "all";
   selectedMonth = sel.value;
+}
+
+function renderTypeOfCallTable(headId, bodyId, report){
+  const head = document.getElementById(headId);
+  const body = document.getElementById(bodyId);
+  const types = (report && report.allTypes) || [];
+  const agents = (report && report.agents) || [];
+
+  head.innerHTML = `<th>Agent</th>` + types.map(t=>`<th class="num">${escapeHtml(t)}</th>`).join("") + `<th class="num">Total</th>`;
+
+  if(!agents.length){
+    body.innerHTML = `<tr><td colspan="${types.length+2}" style="text-align:center;color:var(--slate-light)">No "Call Type" data yet</td></tr>`;
+    return;
+  }
+  body.innerHTML = agents.map(a=>`
+    <tr>
+      <td class="agent-name">${escapeHtml(a.agentName)}</td>
+      ${types.map(t=>`<td class="num">${fmtNum(a.counts[t]||0)}</td>`).join("")}
+      <td class="num">${fmtNum(a.total)}</td>
+    </tr>
+  `).join("");
+}
+
+function renderReasonTable(bodyId, reasons){
+  const body = document.getElementById(bodyId);
+  if(!reasons || !reasons.length){
+    body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--slate-light)">No data</td></tr>`;
+    return;
+  }
+  body.innerHTML = reasons.map(r=>`
+    <tr>
+      <td class="agent-name">${escapeHtml(r.reason)}</td>
+      <td class="num">${fmtNum(r.activeCount)}</td>
+      <td class="num">${fmtPct(r.activePct)}</td>
+      <td class="num">${fmtNum(r.inactiveCount)}</td>
+      <td class="num">${fmtNum(r.grandTotal)}</td>
+    </tr>
+  `).join("");
+}
+
+function renderReasonKpis(gridId, breakdown){
+  const grid = document.getElementById(gridId);
+  if(!breakdown){ grid.innerHTML = ""; return; }
+  grid.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Total called</div>
+      <div class="kpi-value">${fmtNum(breakdown.totalCalled)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Contacted (valid reasons)</div>
+      <div class="kpi-value good">${fmtNum(breakdown.contactedCount)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Not Contactable</div>
+      <div class="kpi-value shortfall">${fmtNum(breakdown.notContactableCount)}</div>
+      <div class="kpi-sub">Call back later / LBO no / No response / Wrong number</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">LBO Shifted to other ISP</div>
+      <div class="kpi-value shortfall">${fmtNum(breakdown.lboShiftedCount)}</div>
+    </div>
+  `;
+}
+
+function populateAgentSelect(selectId, agents){
+  const sel = document.getElementById(selectId);
+  const list = agents || [];
+  sel.innerHTML = list.map(a=>`<option value="${escapeHtml(a.agentName)}">${escapeHtml(a.agentName)}</option>`).join("")
+    || `<option value="">No agents</option>`;
+}
+
+function renderReasonAgentTable(kind, agentName){
+  if(!lastData) return;
+  const breakdown = kind === "contactable" ? lastData.contactableReasonBreakdown : lastData.renewReasonBreakdown;
+  const agents = (breakdown && breakdown.agents) || [];
+  const agent = agents.find(a=>a.agentName === agentName) || agents[0];
+  const bodyId = kind === "contactable" ? "reason-contactable-agent-body" : "reason-renew-agent-body";
+  renderReasonTable(bodyId, agent ? agent.reasons : []);
 }
 
 document.querySelectorAll(".tab").forEach(tab=>{
@@ -482,6 +641,7 @@ async function loadData(){
     const res = await fetch(url, { cache: "no-store" });
     const data = await res.json();
     if(data.error) throw new Error(data.error);
+    lastData = data;
 
     populateMonthDropdown(data.availableMonths, data.selectedMonth);
 
@@ -493,6 +653,19 @@ async function loadData(){
     renderPriRows("agent-pri-body", data.pri.agents);
     renderContactOrRenewRows("agent-contactable-body", data.contactable.agents, "contactable");
     renderContactOrRenewRows("agent-renew-body", data.renew.agents, "renew");
+
+    renderTypeOfCallTable("ct-contactable-head", "ct-contactable-body", data.contactableTypeOfCall);
+    renderTypeOfCallTable("ct-renew-head", "ct-renew-body", data.renewTypeOfCall);
+
+    renderReasonKpis("reason-contactable-kpis", data.contactableReasonBreakdown && data.contactableReasonBreakdown.tl);
+    renderReasonTable("reason-contactable-tl-body", data.contactableReasonBreakdown && data.contactableReasonBreakdown.tl.reasons);
+    populateAgentSelect("reason-contactable-agent-select", data.contactableReasonBreakdown && data.contactableReasonBreakdown.agents);
+    renderReasonAgentTable("contactable", document.getElementById("reason-contactable-agent-select").value);
+
+    renderReasonKpis("reason-renew-kpis", data.renewReasonBreakdown && data.renewReasonBreakdown.tl);
+    renderReasonTable("reason-renew-tl-body", data.renewReasonBreakdown && data.renewReasonBreakdown.tl.reasons);
+    populateAgentSelect("reason-renew-agent-select", data.renewReasonBreakdown && data.renewReasonBreakdown.agents);
+    renderReasonAgentTable("renew", document.getElementById("reason-renew-agent-select").value);
 
     const monthLabel = data.selectedMonth === "all" ? "All months" : data.selectedMonth;
     document.getElementById("last-updated").textContent =
