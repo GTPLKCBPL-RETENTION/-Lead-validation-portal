@@ -230,6 +230,9 @@
   </div>
   <div class="refresh-info">
     <span id="last-updated">Loading…</span>
+    <select id="month-select" onchange="onMonthChange(this.value)" style="margin-left:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:6px 10px;border-radius:6px;font-size:12px;">
+      <option value="">Loading months…</option>
+    </select>
     <button onclick="loadData()">Refresh</button>
   </div>
 </header>
@@ -354,6 +357,21 @@ const API_BASE = "https://script.google.com/macros/s/AKfycbzKgVNMqcthgsevnnuCN-1
 const POLL_INTERVAL_MS = 60000; // refresh every 60s
 
 let pollTimer = null;
+let selectedMonth = null; // null = let backend pick latest month; "all" = combined
+
+function onMonthChange(value){
+  selectedMonth = value;
+  loadData();
+}
+
+function populateMonthDropdown(availableMonths, currentSelection){
+  const sel = document.getElementById("month-select");
+  const options = ['<option value="all">All months (combined)</option>']
+    .concat((availableMonths || []).map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`));
+  sel.innerHTML = options.join("");
+  sel.value = currentSelection || "all";
+  selectedMonth = sel.value;
+}
 
 document.querySelectorAll(".tab").forEach(tab=>{
   tab.addEventListener("click", ()=>{
@@ -457,9 +475,15 @@ async function loadData(){
   document.getElementById("error").style.display = "none";
 
   try{
-    const res = await fetch(API_BASE, { cache: "no-store" });
+    let url = API_BASE;
+    if(selectedMonth){
+      url += (url.indexOf("?") === -1 ? "?" : "&") + "month=" + encodeURIComponent(selectedMonth);
+    }
+    const res = await fetch(url, { cache: "no-store" });
     const data = await res.json();
     if(data.error) throw new Error(data.error);
+
+    populateMonthDropdown(data.availableMonths, data.selectedMonth);
 
     renderTlKpis(data);
     renderPriRows("tl-pri-body", data.pri.agents);
@@ -470,8 +494,9 @@ async function loadData(){
     renderContactOrRenewRows("agent-contactable-body", data.contactable.agents, "contactable");
     renderContactOrRenewRows("agent-renew-body", data.renew.agents, "renew");
 
+    const monthLabel = data.selectedMonth === "all" ? "All months" : data.selectedMonth;
     document.getElementById("last-updated").textContent =
-      "Updated " + new Date(data.generatedAt).toLocaleTimeString("en-IN");
+      "Showing " + monthLabel + " · Updated " + new Date(data.generatedAt).toLocaleTimeString("en-IN");
 
     document.getElementById("loading").style.display = "none";
     document.getElementById("content").style.display = "block";
