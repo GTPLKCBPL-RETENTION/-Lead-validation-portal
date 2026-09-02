@@ -317,7 +317,7 @@
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>Agent</th><th class="num">Total called</th><th class="num">Contacted</th>
+            <th>Agent</th><th class="num">Total called (Including LBO shifted to other ISP)</th><th class="num">Contacted</th>
             <th class="num">Contacted %</th><th class="num">Target</th>
             <th class="num">Shortfall</th><th class="num">Status</th>
           </tr></thead>
@@ -329,7 +329,7 @@
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>Agent</th><th class="num">Total called</th><th class="num">Renewed</th>
+            <th>Agent</th><th class="num">Total Contacted (Excluding LBO shifted to other ISP)</th><th class="num">Renewed</th>
             <th class="num">Renewed %</th><th class="num">Target</th>
             <th class="num">Shortfall</th><th class="num">Status</th>
           </tr></thead>
@@ -454,7 +454,7 @@ function renderReasonKpis(gridId, breakdown){
   if(!breakdown){ grid.innerHTML = ""; return; }
   grid.innerHTML = `
     <div class="kpi-card">
-      <div class="kpi-label">Total called</div>
+      <div class="kpi-label">Total Contacted (Excluding LBO shifted to other ISP)</div>
       <div class="kpi-value">${fmtNum(breakdown.totalCalled)}</div>
     </div>
     <div class="kpi-card">
