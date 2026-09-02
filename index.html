@@ -427,6 +427,37 @@ function renderReasonTable(bodyId, reasons){
   `).join("");
 }
 
+/* Same as renderReasonTable but appends a bold "Total" row at the bottom,
+   summed from the breakdown's grandTotal object. Used for Management Summary. */
+function renderReasonTableWithTotal(bodyId, reasons, grandTotal){
+  const body = document.getElementById(bodyId);
+  if(!reasons || !reasons.length){
+    body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--slate-light)">No data</td></tr>`;
+    return;
+  }
+  let rowsHtml = reasons.map(r=>`
+    <tr>
+      <td class="agent-name">${escapeHtml(r.reason)}</td>
+      <td class="num">${fmtNum(r.activeCount)}</td>
+      <td class="num">${fmtPct(r.activePct)}</td>
+      <td class="num">${fmtNum(r.inactiveCount)}</td>
+      <td class="num">${fmtNum(r.grandTotal)}</td>
+    </tr>
+  `).join("");
+  if(grandTotal){
+    rowsHtml += `
+    <tr style="background:#F0F2FA;font-weight:700;">
+      <td class="agent-name">Total</td>
+      <td class="num">${fmtNum(grandTotal.activeCount)}</td>
+      <td class="num">${fmtPct(grandTotal.activePct)}</td>
+      <td class="num">${fmtNum(grandTotal.inactiveCount)}</td>
+      <td class="num">${fmtNum(grandTotal.grandTotal)}</td>
+    </tr>
+    `;
+  }
+  body.innerHTML = rowsHtml;
+}
+
 function renderMgmtSummaryKpis(gridId, breakdown){
   const grid = document.getElementById(gridId);
   if(!breakdown){ grid.innerHTML = ""; return; }
@@ -659,7 +690,7 @@ async function loadData(){
     renderContactOrRenewRows("agent-renew-body", data.renew.agents, "renew");
 
     renderMgmtSummaryKpis("mgmt-summary-kpis", data.renewReasonBreakdown && data.renewReasonBreakdown.tl);
-    renderReasonTable("mgmt-summary-reason-body", data.renewReasonBreakdown && data.renewReasonBreakdown.tl.reasons);
+    renderReasonTableWithTotal("mgmt-summary-reason-body", data.renewReasonBreakdown && data.renewReasonBreakdown.tl.reasons, data.renewReasonBreakdown && data.renewReasonBreakdown.tl.grandTotal);
 
     const monthLabel = data.selectedMonth === "all" ? "All months" : data.selectedMonth;
     document.getElementById("last-updated").textContent =
