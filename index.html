@@ -180,7 +180,7 @@
   tbody tr:hover{ background:#FAFBFD; }
   td.agent-name{ font-weight:600; color:var(--navy); }
   td.num{ text-align:right; font-variant-numeric:tabular-nums; }
-  td.bucket-cell{ text-align:left; white-space:normal; min-width:170px; vertical-align:top; padding-top:10px; padding-bottom:10px; }
+  td.bucket-cell{ text-align:right; white-space:normal; min-width:170px; vertical-align:top; padding-top:10px; padding-bottom:10px; }
   .bucket-count{ font-weight:700; font-size:14px; color:var(--ink); text-align:right; }
   .bucket-sub{ font-size:11px; color:var(--slate); text-align:right; margin-top:2px; white-space:nowrap; }
   .table-wrap{ overflow-x:auto; }
@@ -237,13 +237,16 @@
 <body>
 
 <header>
-  <div>
-    <h1>Retention Team — Performance Dashboard</h1>
-    <div class="sub">GTPL KCBPL &middot; Live from Google Sheets</div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <img src="logo.png" alt="GTPL KCBPL" style="height:46px;width:auto;border-radius:4px;background:#fff;padding:3px 6px;">
+    <div>
+      <h1>Retention Team — Performance Dashboard</h1>
+      <div class="sub">GTPL KCBPL &middot; Live from Google Sheets</div>
+    </div>
   </div>
   <div class="refresh-info">
     <span id="last-updated">Loading…</span>
-    <select id="month-select" onchange="onMonthChange(this.value)" style="margin-left:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:6px 10px;border-radius:6px;font-size:12px;">
+    <select id="month-select" onchange="onMonthChange(this.value)" style="margin-left:10px;background:#fff;color:#1A1D29;border:1px solid rgba(255,255,255,0.25);padding:6px 10px;border-radius:6px;font-size:12px;">
       <option value="">Loading months…</option>
     </select>
     <button onclick="loadData()">Refresh</button>
@@ -284,9 +287,9 @@
           <thead><tr>
             <th>Agent</th>
             <th class="num">Total Called</th>
-            <th class="num">Inactive</th>
-            <th class="num">Suspend</th>
-            <th class="num">Upcoming</th>
+            <th class="num" style="min-width:170px;">Inactive</th>
+            <th class="num" style="min-width:170px;">Suspend</th>
+            <th class="num" style="min-width:170px;">Upcoming</th>
           </tr></thead>
           <tbody id="tl-agent-summary-body"></tbody>
         </table>
