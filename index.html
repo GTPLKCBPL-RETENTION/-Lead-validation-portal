@@ -180,6 +180,9 @@
   tbody tr:hover{ background:#FAFBFD; }
   td.agent-name{ font-weight:600; color:var(--navy); }
   td.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  td.bucket-cell{ text-align:left; white-space:normal; min-width:170px; vertical-align:top; padding-top:10px; padding-bottom:10px; }
+  .bucket-count{ font-weight:700; font-size:14px; color:var(--ink); text-align:right; }
+  .bucket-sub{ font-size:11px; color:var(--slate); text-align:right; margin-top:2px; white-space:nowrap; }
   .table-wrap{ overflow-x:auto; }
 
   .inline-select{
@@ -284,10 +287,6 @@
             <th class="num">Inactive</th>
             <th class="num">Suspend</th>
             <th class="num">Upcoming</th>
-            <th class="num">Contactable</th>
-            <th class="num">Contactable %</th>
-            <th class="num">Renew</th>
-            <th class="num">Renew %</th>
           </tr></thead>
           <tbody id="tl-agent-summary-body"></tbody>
         </table>
@@ -545,28 +544,39 @@ function renderContactOrRenewRows(bodyId, agents, mode){
   `).join("");
 }
 
-/* New combined TL agent-wise summary table:
-   Agent | Total Called | Inactive | Suspend | Upcoming | Contactable | Contactable % | Renew | Renew % */
+/* New combined TL agent-wise summary table (compact card-cell format):
+   Agent | Total Called | Inactive | Suspend | Upcoming
+   Each bucket cell shows: Count, then Contactable count(%) and Renew count(%) as small sub-lines. */
+function renderBucketCell(bucket){
+  if(!bucket){
+    return `<div class="bucket-count">—</div>`;
+  }
+  return `
+    <div class="bucket-count">${fmtNum(bucket.total)}</div>
+    <div class="bucket-sub">Contactable: ${fmtNum(bucket.contactableCount)} (${fmtPct(bucket.contactablePct)})</div>
+    <div class="bucket-sub">Renew: ${fmtNum(bucket.renewCount)} (${fmtPct(bucket.renewPct)})</div>
+  `;
+}
+
 function renderTlAgentSummaryRows(bodyId, agents){
   const body = document.getElementById(bodyId);
   const list = agents || [];
   if(!list.length){
-    body.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--slate-light)">No data</td></tr>`;
+    body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--slate-light)">No data</td></tr>`;
     return;
   }
-  body.innerHTML = list.map(a=>`
+  body.innerHTML = list.map(a=>{
+    const b = a.buckets || {};
+    return `
     <tr>
       <td class="agent-name">${escapeHtml(a.agentName)}</td>
       <td class="num">${fmtNum(a.totalCalled)}</td>
-      <td class="num">${fmtNum(a.inactiveCount)}</td>
-      <td class="num">${fmtNum(a.suspendCount)}</td>
-      <td class="num">${fmtNum(a.upcomingCount)}</td>
-      <td class="num">${fmtNum(a.contactableCount)}</td>
-      <td class="num">${fmtPct(a.contactablePct)}</td>
-      <td class="num">${fmtNum(a.renewCount)}</td>
-      <td class="num">${fmtPct(a.renewPct)}</td>
+      <td class="num bucket-cell">${renderBucketCell(b.inactive)}</td>
+      <td class="num bucket-cell">${renderBucketCell(b.suspend)}</td>
+      <td class="num bucket-cell">${renderBucketCell(b.upcoming)}</td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function renderTlKpis(data){
