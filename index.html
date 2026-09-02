@@ -562,14 +562,27 @@ function renderBucketCell(bucket){
   `;
 }
 
-function renderTlAgentSummaryRows(bodyId, agents){
+function renderTlAgentSummaryRows(bodyId, agents, totals){
   const body = document.getElementById(bodyId);
   const list = agents || [];
   if(!list.length){
     body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--slate-light)">No data</td></tr>`;
     return;
   }
-  body.innerHTML = list.map(a=>{
+  let rowsHtml = "";
+  if(totals){
+    const tb = totals.buckets || {};
+    rowsHtml += `
+    <tr style="background:#F0F2FA;font-weight:700;">
+      <td class="agent-name">Total (All agents)</td>
+      <td class="num">${fmtNum(totals.totalCalled)}</td>
+      <td class="num bucket-cell">${renderBucketCell(tb.inactive)}</td>
+      <td class="num bucket-cell">${renderBucketCell(tb.suspend)}</td>
+      <td class="num bucket-cell">${renderBucketCell(tb.upcoming)}</td>
+    </tr>
+    `;
+  }
+  rowsHtml += list.map(a=>{
     const b = a.buckets || {};
     return `
     <tr>
@@ -581,6 +594,7 @@ function renderTlAgentSummaryRows(bodyId, agents){
     </tr>
   `;
   }).join("");
+  body.innerHTML = rowsHtml;
 }
 
 function renderTlKpis(data){
@@ -638,7 +652,7 @@ async function loadData(){
     populateMonthDropdown(data.availableMonths, data.selectedMonth);
 
     renderTlKpis(data);
-    renderTlAgentSummaryRows("tl-agent-summary-body", data.tlAgentSummary && data.tlAgentSummary.agents);
+    renderTlAgentSummaryRows("tl-agent-summary-body", data.tlAgentSummary && data.tlAgentSummary.agents, data.tlAgentSummary && data.tlAgentSummary.totals);
 
     renderPriRows("agent-pri-body", data.pri.agents);
     renderContactOrRenewRows("agent-contactable-body", data.contactable.agents, "contactable");
