@@ -355,7 +355,7 @@
         <div class="panel">
           <h2>Lead status breakup</h2>
           <table id="status-table">
-            <thead><tr><th>Status</th><th class="num">Leads</th><th>Share</th></tr></thead>
+            <thead><tr><th>Status</th><th class="num" style="width:70px;">Leads</th><th style="width:60px;">Share</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -363,10 +363,10 @@
         <div class="panel">
           <h2>Month-wise trend</h2>
           <p style="font-size:12px;color:var(--grey);margin-top:-6px;margin-bottom:12px;">
-            "Leads generated" is counted by the lead's original date. "Revenue (deals closed)" is counted by the month the deal actually closed &mdash; a lead from one month can close, and add revenue, in a later month.
+            "Leads generated" is counted by the lead's original date. "Valid lead count" (also by original date) counts only leads whose status is one of: Feedback Pending from Sales., Hold From Customer End, ISP/P2P Lead, Lead Close, Lead Lost to Competitor, Out of Service Area in West Bengal, or Under Discussion with Sales &mdash; other statuses (Duplicate, Invalid Mobile Number, etc.) are not counted as valid. "Revenue (deals closed)" is counted by the month the deal actually closed &mdash; a lead from one month can close, and add revenue, in a later month.
           </p>
           <table id="month-table">
-            <thead><tr><th>Month</th><th class="num">Leads generated</th><th class="num">Closed / won</th><th>Closed by connection type</th><th class="num">Revenue (deals closed)</th></tr></thead>
+            <thead><tr><th>Month</th><th class="num">Leads generated</th><th class="num">Valid lead count</th><th class="num">Closed / won</th><th>Closed by connection type</th><th class="num">Revenue (deals closed)</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -833,8 +833,27 @@ function renderByStatus(leads) {
 // this is a DIFFERENT month field, not the same as lead_month, since a
 // lead generated in one month can close in a later month.
 // =============================================================================
+// A lead is "valid" if its raw LEAD STATUS is one of these 7 (case-
+// insensitive match, since the sheet's exact casing can vary — e.g.
+// "Hold From Customer End" with a capital F).
+var VALID_LEAD_STATUSES = [
+  "Feedback Pending from Sales.",
+  "Hold from Customer End",
+  "ISP/P2P Lead",
+  "Lead Close",
+  "Lead Lost to Competitor",
+  "Out of Service Area in West Bengal",
+  "Under Discussion with Sales"
+].map(function (s) { return s.trim().toLowerCase(); });
+
+function isValidLeadStatus_(statusRaw) {
+  var normalized = String(statusRaw || '').trim().toLowerCase();
+  return VALID_LEAD_STATUSES.indexOf(normalized) !== -1;
+}
+
 function renderByMonth(leads) {
   var leadCounts = {};
+  var validLeadCounts = {};          // count of "valid" leads, keyed by lead month
   var closedByCloseMonth = {};       // count of closed/won leads, keyed by close month
   var connTypeByCloseMonth = {};     // connection-type breakdown of those closed leads
   var revenueByCloseMonth = {};
@@ -842,6 +861,9 @@ function renderByMonth(leads) {
   leads.forEach(function (l) {
     if (l.lead_month) {
       leadCounts[l.lead_month] = (leadCounts[l.lead_month] || 0) + 1;
+      if (isValidLeadStatus_(l.status_raw)) {
+        validLeadCounts[l.lead_month] = (validLeadCounts[l.lead_month] || 0) + 1;
+      }
     }
     if (l.close_month_normalized && l.status_category === 'Closed / Won') {
       closedByCloseMonth[l.close_month_normalized] = (closedByCloseMonth[l.close_month_normalized] || 0) + 1;
@@ -861,7 +883,7 @@ function renderByMonth(leads) {
 
   var tbody = document.querySelector('#month-table tbody');
   tbody.innerHTML = '';
-  if (allMonths.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="empty-note">No data</td></tr>'; return; }
+  if (allMonths.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No data</td></tr>'; return; }
   allMonths.forEach(function (m) {
     var connBreakdown = connTypeByCloseMonth[m]
       ? Object.keys(connTypeByCloseMonth[m]).sort().map(function (ct) { return ct + ': ' + connTypeByCloseMonth[m][ct]; }).join(', ')
@@ -870,6 +892,7 @@ function renderByMonth(leads) {
     tr.innerHTML =
       '<td>' + m + '</td>' +
       '<td class="num">' + (leadCounts[m] || 0) + '</td>' +
+      '<td class="num">' + (validLeadCounts[m] || 0) + '</td>' +
       '<td class="num">' + (closedByCloseMonth[m] || 0) + '</td>' +
       '<td style="font-size:12px;color:var(--grey)">' + connBreakdown + '</td>' +
       '<td class="num">' + fmtINR(revenueByCloseMonth[m] || 0) + '</td>';
