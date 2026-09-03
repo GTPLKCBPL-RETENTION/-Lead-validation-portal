@@ -20,29 +20,29 @@
   * { box-sizing: border-box; }
   body { margin:0; font-family:'Segoe UI',Arial,sans-serif; background:var(--bg); color:var(--text); }
 
-  /* ---- Login screen ---- */
-  #login-screen {
+  /* ---- Login / email-gate screens (shared look) ---- */
+  #login-screen, #email-gate-screen {
     min-height: 100vh;
     display: flex; align-items: center; justify-content: center;
     background: linear-gradient(135deg, var(--navy), var(--blue));
   }
-  #login-screen .card {
+  #login-screen .card, #email-gate-screen .card {
     background: #fff; padding: 40px 36px; border-radius: 12px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.25); width: 100%; max-width: 380px;
   }
-  #login-screen h1 { font-size: 20px; color: var(--navy); margin: 0 0 4px; }
-  #login-screen p.sub { color: #667; font-size: 13px; margin: 0 0 24px; }
-  #login-screen label { font-size: 13px; color: #445; display: block; margin-bottom: 6px; font-weight: 600; }
-  #login-screen input[type=password] {
+  #login-screen h1, #email-gate-screen h1 { font-size: 20px; color: var(--navy); margin: 0 0 4px; }
+  #login-screen p.sub, #email-gate-screen p.sub { color: #667; font-size: 13px; margin: 0 0 24px; }
+  #login-screen label, #email-gate-screen label { font-size: 13px; color: #445; display: block; margin-bottom: 6px; font-weight: 600; }
+  #login-screen input[type=password], #email-gate-screen input[type=email] {
     width: 100%; padding: 12px 14px; border: 1px solid #d7dee6; border-radius: 8px;
     font-size: 14px; margin-bottom: 18px;
   }
-  #login-screen button {
+  #login-screen button, #email-gate-screen button {
     width: 100%; padding: 12px; background: var(--blue); color: #fff; border: none;
     border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;
   }
-  #login-screen button:hover { background: var(--navy); }
-  #login-error {
+  #login-screen button:hover, #email-gate-screen button:hover { background: var(--navy); }
+  #login-error, .gate-error {
     background: #fdecea; color: #b3261e; padding: 10px 12px; border-radius: 6px;
     font-size: 13px; margin-bottom: 16px; display: none;
   }
@@ -131,9 +131,63 @@
     color: var(--red); font-size: 11px; margin-top: 4px; display: none;
   }
   .field-inline-error.visible { display: block; }
+
+  /* ---- Modal (duplicate mobile warning) ---- */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15,41,66,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+  }
+  .modal-box {
+    background: #fff; border-radius: 12px; padding: 28px; max-width: 420px; width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal-box.modal-danger { border-top: 5px solid var(--red); }
+  .modal-box h3 { margin: 0 0 10px; color: var(--red); font-size: 17px; }
+  .modal-box p { margin: 0 0 20px; font-size: 14px; color: var(--text); line-height: 1.5; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+  .modal-btn-secondary {
+    background: #fff; border: 1px solid var(--border); color: var(--grey);
+    padding: 9px 18px; border-radius: 6px; font-size: 13px; cursor: pointer;
+  }
+  .modal-btn-danger {
+    background: var(--red); border: none; color: #fff;
+    padding: 9px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
   .agent-speed-row { display: flex; gap: 8px; }
   .filter-group .agent-speed-row input[type=number] { flex: 1 1 auto; width: auto; min-width: 0; }
   .filter-group .agent-speed-row select { width: 100px; flex: 0 0 100px; }
+
+  /* ---- Admin tab ---- */
+  .admin-dropdown-block {
+    border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+    margin-bottom: 16px; background: #fafbfc;
+  }
+  .admin-dropdown-block h4 { font-size: 13px; color: var(--navy); margin: 0 0 10px; }
+  .admin-option-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .admin-option-row input[type=text] {
+    flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px;
+  }
+  .admin-remove-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--red);
+    width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 14px; line-height: 1;
+  }
+  .admin-remove-btn:hover { background: #fdecea; }
+  .admin-add-row-btn {
+    background: transparent; border: 1px dashed var(--border); color: var(--blue);
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-top: 4px;
+  }
+  .admin-save-btn {
+    background: var(--teal); border: none; color: #fff; padding: 7px 16px;
+    border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 10px;
+  }
+  .admin-email-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; border-bottom: 1px solid #eef1f4; font-size: 13px;
+  }
 
   /* ---- Main layout ---- */
   main { padding: 24px 28px 60px; max-width: 1400px; margin: 0 auto; }
@@ -217,9 +271,26 @@
 <body>
 
 <!-- ============================================================
+     EMAIL GATE SCREEN — shown first, before the password screen.
+     Checks the entered email against the "Allowed Emails" sheet tab.
+     ============================================================ -->
+<div id="email-gate-screen">
+  <div class="card">
+    <h1>Sales Coordinator Dashboard</h1>
+    <p class="sub">GTPL KCBPL &mdash; Lead &amp; Revenue Tracker</p>
+    <div id="email-gate-error" class="gate-error">This email does not have access. Contact your administrator.</div>
+    <form id="email-gate-form">
+      <label for="gate-email">Email address</label>
+      <input type="email" id="gate-email" autofocus required placeholder="you@example.com">
+      <button type="submit">Continue</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
      LOGIN SCREEN
      ============================================================ -->
-<div id="login-screen">
+<div id="login-screen" style="display:none;">
   <div class="card">
     <h1>Sales Coordinator Dashboard</h1>
     <p class="sub">GTPL KCBPL &mdash; Lead &amp; Revenue Tracker</p>
@@ -276,6 +347,7 @@
       <button class="tab-btn" data-tab="tab-source" onclick="switchTab('tab-source')">Source / Connection</button>
       <button class="tab-btn" data-tab="tab-details" onclick="switchTab('tab-details')">Lead Details</button>
       <button class="tab-btn" data-tab="tab-agent" onclick="switchTab('tab-agent')">Agent Update</button>
+      <button class="tab-btn" data-tab="tab-admin" onclick="switchTab('tab-admin')">Admin</button>
     </div>
 
     <div id="tab-overview" class="tab-panel active">
@@ -294,7 +366,7 @@
             "Leads generated" is counted by the lead's original date. "Revenue (deals closed)" is counted by the month the deal actually closed &mdash; a lead from one month can close, and add revenue, in a later month.
           </p>
           <table id="month-table">
-            <thead><tr><th>Month</th><th class="num">Leads generated</th><th class="num">Revenue (deals closed)</th></tr></thead>
+            <thead><tr><th>Month</th><th class="num">Leads generated</th><th class="num">Closed / won</th><th>Closed by connection type</th><th class="num">Revenue (deals closed)</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -410,6 +482,35 @@
         </div>
       </div>
     </div>
+
+    <div id="tab-admin" class="tab-panel">
+      <div class="panel-grid">
+        <div class="panel full-width">
+          <h2>Dropdown lists</h2>
+          <p style="font-size:13px;color:var(--grey);margin-top:-6px;margin-bottom:16px;">
+            Add or remove the options shown in the Lead Source, Type of Connection, Caller Name,
+            RM Name, and Lead Status dropdowns across the whole dashboard.
+          </p>
+          <div id="admin-dropdown-lists"></div>
+        </div>
+
+        <div class="panel full-width">
+          <h2>Allowed emails</h2>
+          <p style="font-size:13px;color:var(--grey);margin-top:-6px;margin-bottom:16px;">
+            Only these email addresses can open this dashboard.
+          </p>
+          <div id="admin-emails-list"></div>
+          <div class="agent-search-bar" style="margin-top:14px;">
+            <div class="filter-group">
+              <label for="admin-new-email">Add an email</label>
+              <input type="email" id="admin-new-email" placeholder="name@example.com">
+            </div>
+            <button class="primary-btn" onclick="adminAddEmail()">Add</button>
+          </div>
+          <div id="admin-emails-status" class="agent-status-msg" style="display:none; margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -450,8 +551,35 @@ function switchTab(tabId) {
 }
 
 // =============================================================================
-// LOGIN
+// EMAIL GATE + LOGIN
 // =============================================================================
+document.getElementById('email-gate-form').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  var email = document.getElementById('gate-email').value.trim();
+  var errorEl = document.getElementById('email-gate-error');
+  errorEl.style.display = 'none';
+
+  try {
+    var data = await agentPostToScript({ action: 'check_email', email: email });
+    if (data.success && data.allowed) {
+      sessionStorage.setItem('sc_email_verified', email);
+      showLoginScreen();
+    } else {
+      errorEl.textContent = 'This email does not have access. Contact your administrator.';
+      errorEl.style.display = 'block';
+    }
+  } catch (err) {
+    errorEl.textContent = 'Could not verify email. Please try again.';
+    errorEl.style.display = 'block';
+    console.error(err);
+  }
+});
+
+function showLoginScreen() {
+  document.getElementById('email-gate-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
 document.getElementById('login-form').addEventListener('submit', function (e) {
   e.preventDefault();
   var pwd = document.getElementById('password').value;
@@ -465,8 +593,10 @@ document.getElementById('login-form').addEventListener('submit', function (e) {
 
 function logout() {
   sessionStorage.removeItem('sc_logged_in');
+  sessionStorage.removeItem('sc_email_verified');
   document.getElementById('dashboard-screen').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('email-gate-screen').style.display = 'flex';
 }
 
 function showDashboard() {
@@ -705,11 +835,19 @@ function renderByStatus(leads) {
 // =============================================================================
 function renderByMonth(leads) {
   var leadCounts = {};
+  var closedByCloseMonth = {};       // count of closed/won leads, keyed by close month
+  var connTypeByCloseMonth = {};     // connection-type breakdown of those closed leads
   var revenueByCloseMonth = {};
 
   leads.forEach(function (l) {
     if (l.lead_month) {
       leadCounts[l.lead_month] = (leadCounts[l.lead_month] || 0) + 1;
+    }
+    if (l.close_month_normalized && l.status_category === 'Closed / Won') {
+      closedByCloseMonth[l.close_month_normalized] = (closedByCloseMonth[l.close_month_normalized] || 0) + 1;
+      var ct = l.connection_type || 'OTHER';
+      connTypeByCloseMonth[l.close_month_normalized] = connTypeByCloseMonth[l.close_month_normalized] || {};
+      connTypeByCloseMonth[l.close_month_normalized][ct] = (connTypeByCloseMonth[l.close_month_normalized][ct] || 0) + 1;
     }
     if (l.close_month_normalized && l.revenue) {
       revenueByCloseMonth[l.close_month_normalized] =
@@ -718,17 +856,22 @@ function renderByMonth(leads) {
   });
 
   var allMonths = Array.from(new Set(
-    Object.keys(leadCounts).concat(Object.keys(revenueByCloseMonth))
+    Object.keys(leadCounts).concat(Object.keys(revenueByCloseMonth)).concat(Object.keys(closedByCloseMonth))
   )).sort();
 
   var tbody = document.querySelector('#month-table tbody');
   tbody.innerHTML = '';
-  if (allMonths.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="empty-note">No data</td></tr>'; return; }
+  if (allMonths.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="empty-note">No data</td></tr>'; return; }
   allMonths.forEach(function (m) {
+    var connBreakdown = connTypeByCloseMonth[m]
+      ? Object.keys(connTypeByCloseMonth[m]).sort().map(function (ct) { return ct + ': ' + connTypeByCloseMonth[m][ct]; }).join(', ')
+      : '&mdash;';
     var tr = document.createElement('tr');
     tr.innerHTML =
       '<td>' + m + '</td>' +
       '<td class="num">' + (leadCounts[m] || 0) + '</td>' +
+      '<td class="num">' + (closedByCloseMonth[m] || 0) + '</td>' +
+      '<td style="font-size:12px;color:var(--grey)">' + connBreakdown + '</td>' +
       '<td class="num">' + fmtINR(revenueByCloseMonth[m] || 0) + '</td>';
     tbody.appendChild(tr);
   });
@@ -763,7 +906,9 @@ function renderByRM(leads) {
       if (l.status_category === 'Interested') groups[rm].interested++;
       if (l.status_category === 'Not Interested') groups[rm].notInterested++;
 
-      var pendingMatch = FEEDBACK_PENDING_STATUSES.filter(function (p) { return p.raw === l.status_raw; })[0];
+      var pendingMatch = FEEDBACK_PENDING_STATUSES.filter(function (p) {
+        return p.raw.trim().toLowerCase() === String(l.status_raw || '').trim().toLowerCase();
+      })[0];
       if (pendingMatch) {
         groups[rm].feedbackPendingByStatus[pendingMatch.label] =
           (groups[rm].feedbackPendingByStatus[pendingMatch.label] || 0) + 1;
@@ -914,7 +1059,7 @@ var AGENT_EDITABLE_COLUMNS = [
   { label: "Type of Connection", header: "TYPE OF CONNECTION", type: "select", required: true,
     options: ["CORPORATE BB", "ILL", "OTHER", "P2P"] },
   { label: "Speed / Bandwidth", header: "Speed / Bandwidth", type: "speed", defaultZero: true },
-  { label: "Price (Rs.)", header: "Price (Rs.)", type: "number", defaultZero: true },
+  { label: "Price (Rs.)", header: "Price (Rs.)", type: "number", defaultZero: true, skipOnAdd: true },
   { label: "Contact Person Name", header: "Contact Person name", type: "text" },
   { label: "Mobile No", header: "Mobile No", type: "mobile", required: true },
   { label: "Pin Code", header: "Pin Code", type: "text" },
@@ -1357,6 +1502,31 @@ async function submitNewLead() {
     return;
   }
 
+  // Check for a duplicate mobile number before saving — warn, but let
+  // the agent proceed if they confirm ("Continue Anyway").
+  statusEl.className = 'agent-status-msg info';
+  statusEl.textContent = 'Checking mobile number\u2026';
+  statusEl.style.display = 'block';
+
+  try {
+    var dupCheck = await agentPostToScript({ action: 'check_duplicate_mobile', mobile: fields['Mobile No'] });
+    if (dupCheck.success && dupCheck.is_duplicate) {
+      statusEl.style.display = 'none';
+      showDuplicateMobileModal(function () {
+        saveNewLead_(fields, statusEl);
+      });
+      return;
+    }
+  } catch (err) {
+    // If the duplicate check itself fails, don't block the save — just
+    // proceed without the warning rather than losing the agent's work.
+    console.error('Duplicate check failed:', err);
+  }
+
+  await saveNewLead_(fields, statusEl);
+}
+
+async function saveNewLead_(fields, statusEl) {
   statusEl.className = 'agent-status-msg info';
   statusEl.textContent = 'Saving\u2026';
   statusEl.style.display = 'block';
@@ -1378,13 +1548,249 @@ async function submitNewLead() {
   }
 }
 
+// Shows a red warning modal for a duplicate mobile number. Calls
+// onContinue() only if the agent explicitly confirms.
+function showDuplicateMobileModal(onContinue) {
+  var overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML =
+    '<div class="modal-box modal-danger">' +
+      '<h3>Duplicate Mobile Number</h3>' +
+      '<p>A lead with this mobile number already exists in the sheet. You can still add this as a new entry if needed.</p>' +
+      '<div class="modal-actions">' +
+        '<button class="modal-btn-secondary" data-role="cancel">Cancel</button>' +
+        '<button class="modal-btn-danger" data-role="continue">Continue Anyway</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('[data-role="cancel"]').addEventListener('click', function () {
+    document.body.removeChild(overlay);
+  });
+  overlay.querySelector('[data-role="continue"]').addEventListener('click', function () {
+    document.body.removeChild(overlay);
+    onContinue();
+  });
+}
+
+// =============================================================================
+// ADMIN TAB — dropdown lists + allowed emails
+// =============================================================================
+var ADMIN_DROPDOWN_CONFIG = null; // { "Lead Source": [...], "Type of Connection": [...], ... }
+
+async function loadAdminDropdownConfig() {
+  var container = document.getElementById('admin-dropdown-lists');
+  container.innerHTML = '<p style="color:var(--grey);font-size:13px;">Loading&hellip;</p>';
+  try {
+    var data = await agentPostToScript({ action: 'get_dropdown_config' });
+    if (!data.success) {
+      container.innerHTML = '<p style="color:var(--red);font-size:13px;">' + (data.error || 'Could not load dropdown lists.') + '</p>';
+      return;
+    }
+    ADMIN_DROPDOWN_CONFIG = data.config;
+    renderAdminDropdownLists();
+  } catch (err) {
+    container.innerHTML = '<p style="color:var(--red);font-size:13px;">Could not reach the server.</p>';
+    console.error(err);
+  }
+}
+
+function renderAdminDropdownLists() {
+  var container = document.getElementById('admin-dropdown-lists');
+  var columns = Object.keys(ADMIN_DROPDOWN_CONFIG);
+  container.innerHTML = columns.map(function (colName) {
+    var blockId = 'admin-block-' + colName.replace(/[^a-zA-Z0-9]/g, '-');
+    var options = ADMIN_DROPDOWN_CONFIG[colName];
+    return (
+      '<div class="admin-dropdown-block" id="' + blockId + '" data-column="' + colName + '">' +
+        '<h4>' + colName + '</h4>' +
+        '<div data-role="options-list">' +
+          options.map(function (opt, idx) { return adminOptionRowHtml(opt, idx); }).join('') +
+        '</div>' +
+        '<button class="admin-add-row-btn" onclick="adminAddOptionRow(\'' + blockId + '\')">+ Add option</button>' +
+        '<br>' +
+        '<button class="admin-save-btn" onclick="adminSaveDropdown(\'' + blockId + '\', \'' + colName + '\')">Save changes</button>' +
+        '<div class="agent-status-msg" data-role="block-status" style="display:none; margin-top:10px;"></div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function adminOptionRowHtml(value, idx) {
+  return (
+    '<div class="admin-option-row">' +
+      '<input type="text" value="' + String(value).replace(/"/g, '&quot;') + '">' +
+      '<button class="admin-remove-btn" onclick="this.parentElement.remove()">&times;</button>' +
+    '</div>'
+  );
+}
+
+function adminAddOptionRow(blockId) {
+  var list = document.querySelector('#' + blockId + ' [data-role="options-list"]');
+  var row = document.createElement('div');
+  row.className = 'admin-option-row';
+  row.innerHTML =
+    '<input type="text" value="" placeholder="New option">' +
+    '<button class="admin-remove-btn" onclick="this.parentElement.remove()">&times;</button>';
+  list.appendChild(row);
+  row.querySelector('input').focus();
+}
+
+async function adminSaveDropdown(blockId, colName) {
+  var block = document.getElementById(blockId);
+  var statusEl = block.querySelector('[data-role="block-status"]');
+  var inputs = block.querySelectorAll('[data-role="options-list"] input[type=text]');
+  var values = Array.prototype.map.call(inputs, function (inp) { return inp.value.trim(); })
+    .filter(function (v) { return v.length > 0; });
+
+  statusEl.className = 'agent-status-msg info';
+  statusEl.textContent = 'Saving\u2026';
+  statusEl.style.display = 'block';
+
+  try {
+    var data = await agentPostToScript({ action: 'update_dropdown_config', column: colName, values: values });
+    if (data.success) {
+      statusEl.className = 'agent-status-msg success';
+      statusEl.textContent = 'Saved.';
+      ADMIN_DROPDOWN_CONFIG[colName] = values;
+      // Refresh any AGENT_EDITABLE_COLUMNS options that mirror this dropdown,
+      // so Add New Lead / Agent Update reflect the change immediately.
+      applyAdminDropdownToForms();
+    } else {
+      statusEl.className = 'agent-status-msg error';
+      statusEl.textContent = data.error || 'Could not save.';
+    }
+  } catch (err) {
+    statusEl.className = 'agent-status-msg error';
+    statusEl.textContent = 'Could not reach the server.';
+    console.error(err);
+  }
+}
+
+// Maps an Admin dropdown-config column name to the matching entry in
+// AGENT_EDITABLE_COLUMNS, so a saved change updates the live forms too.
+var ADMIN_TO_FORM_COLUMN_MAP = {
+  "Lead Source": "LEAD SOURCE",
+  "Type of Connection": "TYPE OF CONNECTION",
+  "Caller Name": "Caller Name",
+  "RM Name": "RM NAME",
+  "Lead Status": "LEAD STATUS"
+};
+
+function applyAdminDropdownToForms() {
+  Object.keys(ADMIN_TO_FORM_COLUMN_MAP).forEach(function (adminCol) {
+    var formHeader = ADMIN_TO_FORM_COLUMN_MAP[adminCol];
+    var col = AGENT_EDITABLE_COLUMNS.filter(function (c) { return c.header === formHeader; })[0];
+    if (col && ADMIN_DROPDOWN_CONFIG[adminCol]) {
+      col.options = ADMIN_DROPDOWN_CONFIG[adminCol];
+    }
+  });
+}
+
+// ---- Allowed emails ----
+var ADMIN_ALLOWED_EMAILS = [];
+
+async function loadAdminEmails() {
+  var container = document.getElementById('admin-emails-list');
+  container.innerHTML = '<p style="color:var(--grey);font-size:13px;">Loading&hellip;</p>';
+  try {
+    var data = await agentPostToScript({ action: 'get_allowed_emails' });
+    if (!data.success) {
+      container.innerHTML = '<p style="color:var(--red);font-size:13px;">' + (data.error || 'Could not load emails.') + '</p>';
+      return;
+    }
+    ADMIN_ALLOWED_EMAILS = data.emails || [];
+    renderAdminEmailsList();
+  } catch (err) {
+    container.innerHTML = '<p style="color:var(--red);font-size:13px;">Could not reach the server.</p>';
+    console.error(err);
+  }
+}
+
+function renderAdminEmailsList() {
+  var container = document.getElementById('admin-emails-list');
+  if (ADMIN_ALLOWED_EMAILS.length === 0) {
+    container.innerHTML = '<p style="color:var(--grey);font-size:13px;">No emails added yet.</p>';
+    return;
+  }
+  container.innerHTML = ADMIN_ALLOWED_EMAILS.map(function (email, idx) {
+    return (
+      '<div class="admin-email-row">' +
+        '<span>' + email + '</span>' +
+        '<button class="admin-remove-btn" onclick="adminRemoveEmail(' + idx + ')">&times;</button>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+async function adminPersistEmails() {
+  var statusEl = document.getElementById('admin-emails-status');
+  statusEl.className = 'agent-status-msg info';
+  statusEl.textContent = 'Saving\u2026';
+  statusEl.style.display = 'block';
+  try {
+    var data = await agentPostToScript({ action: 'update_allowed_emails', emails: ADMIN_ALLOWED_EMAILS });
+    if (data.success) {
+      statusEl.className = 'agent-status-msg success';
+      statusEl.textContent = 'Saved.';
+    } else {
+      statusEl.className = 'agent-status-msg error';
+      statusEl.textContent = data.error || 'Could not save.';
+    }
+  } catch (err) {
+    statusEl.className = 'agent-status-msg error';
+    statusEl.textContent = 'Could not reach the server.';
+    console.error(err);
+  }
+}
+
+function adminAddEmail() {
+  var input = document.getElementById('admin-new-email');
+  var email = input.value.trim().toLowerCase();
+  if (!email) return;
+  if (ADMIN_ALLOWED_EMAILS.indexOf(email) !== -1) {
+    var statusEl = document.getElementById('admin-emails-status');
+    statusEl.className = 'agent-status-msg error';
+    statusEl.textContent = 'That email is already on the list.';
+    statusEl.style.display = 'block';
+    return;
+  }
+  ADMIN_ALLOWED_EMAILS.push(email);
+  input.value = '';
+  renderAdminEmailsList();
+  adminPersistEmails();
+}
+
+function adminRemoveEmail(idx) {
+  ADMIN_ALLOWED_EMAILS.splice(idx, 1);
+  renderAdminEmailsList();
+  adminPersistEmails();
+}
+
+// Load Admin tab data once, the first time it's opened.
+var ADMIN_TAB_LOADED = false;
+var _originalSwitchTab = switchTab;
+switchTab = function (tabId) {
+  _originalSwitchTab(tabId);
+  if (tabId === 'tab-admin' && !ADMIN_TAB_LOADED) {
+    ADMIN_TAB_LOADED = true;
+    loadAdminDropdownConfig();
+    loadAdminEmails();
+  }
+};
+
 // =============================================================================
 // INIT — restore session if already logged in this browser tab
 // =============================================================================
 (function init() {
-  if (sessionStorage.getItem('sc_logged_in') === '1') {
+  var emailVerified = sessionStorage.getItem('sc_email_verified');
+  var loggedIn = sessionStorage.getItem('sc_logged_in');
+  if (loggedIn === '1') {
     showDashboard();
+  } else if (emailVerified) {
+    showLoginScreen();
   }
+  // else: default state is the email-gate screen, already visible.
 })();
 </script>
 </body>
