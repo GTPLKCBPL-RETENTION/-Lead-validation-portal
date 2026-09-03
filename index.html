@@ -87,6 +87,11 @@
   .kpi-card .value { font-size: 28px; font-weight: 700; color: var(--navy); }
   .kpi-card.revenue .value { color: var(--teal); }
   .kpi-card .subvalue { font-size: 12px; color: var(--grey); margin-top: 4px; }
+  .kpi-breakdown {
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--grey); line-height: 1.6;
+  }
+  .kpi-breakdown span { display: inline-block; margin-right: 10px; white-space: nowrap; }
 
   .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
   @media (max-width: 900px) { .panel-grid { grid-template-columns: 1fr; } }
@@ -184,15 +189,18 @@
       <div class="kpi-card">
         <div class="label">Total leads</div>
         <div class="value" id="kpi-total-leads">&mdash;</div>
+        <div class="kpi-breakdown" id="kpi-total-leads-breakdown"></div>
       </div>
       <div class="kpi-card">
         <div class="label">Closed / won leads</div>
         <div class="value" id="kpi-closed-won">&mdash;</div>
+        <div class="kpi-breakdown" id="kpi-closed-won-breakdown"></div>
       </div>
       <div class="kpi-card revenue">
         <div class="label">Total revenue generated</div>
         <div class="value" id="kpi-total-revenue">&mdash;</div>
         <div class="subvalue">From leads marked "Lead Close"</div>
+        <div class="kpi-breakdown" id="kpi-total-revenue-breakdown"></div>
       </div>
     </div>
 
@@ -410,12 +418,46 @@ function getFilteredLeads() {
 // =============================================================================
 function renderSummary(leads) {
   var totalLeads = leads.length;
-  var closedWon = leads.filter(function (l) { return l.status_category === 'Closed / Won'; }).length;
+  var closedLeads = leads.filter(function (l) { return l.status_category === 'Closed / Won'; });
+  var closedWon = closedLeads.length;
   var totalRevenue = leads.reduce(function (sum, l) { return sum + (l.revenue || 0); }, 0);
 
   document.getElementById('kpi-total-leads').textContent = totalLeads.toLocaleString('en-IN');
   document.getElementById('kpi-closed-won').textContent = closedWon.toLocaleString('en-IN');
   document.getElementById('kpi-total-revenue').innerHTML = fmtINR(totalRevenue);
+
+  // --- Mini connection-type breakdowns under each KPI card ---
+  function connTypeCounts(list) {
+    var counts = {};
+    list.forEach(function (l) {
+      var ct = l.connection_type || 'OTHER';
+      counts[ct] = (counts[ct] || 0) + 1;
+    });
+    return counts;
+  }
+  function connTypeRevenue(list) {
+    var rev = {};
+    list.forEach(function (l) {
+      var ct = l.connection_type || 'OTHER';
+      rev[ct] = (rev[ct] || 0) + (l.revenue || 0);
+    });
+    return rev;
+  }
+  function renderBreakdownHTML(dict, isRevenue) {
+    var keys = Object.keys(dict).sort();
+    if (keys.length === 0) return '&mdash;';
+    return keys.map(function (k) {
+      var val = isRevenue ? fmtINR(dict[k]) : dict[k];
+      return '<span>' + k + ': ' + val + '</span>';
+    }).join('');
+  }
+
+  document.getElementById('kpi-total-leads-breakdown').innerHTML =
+    renderBreakdownHTML(connTypeCounts(leads), false);
+  document.getElementById('kpi-closed-won-breakdown').innerHTML =
+    renderBreakdownHTML(connTypeCounts(closedLeads), false);
+  document.getElementById('kpi-total-revenue-breakdown').innerHTML =
+    renderBreakdownHTML(connTypeRevenue(closedLeads), true);
 }
 
 // =============================================================================
@@ -612,20 +654,12 @@ function renderByRM(leads) {
 
 // =============================================================================
 // RENDER: LEAD DETAILS TABLE
-// This table intentionally excludes leads belonging to Moumita Roy — every
-// other panel (KPIs, RM-wise, Source-wise, etc.) still includes her leads.
 // =============================================================================
-var LEAD_DETAILS_EXCLUDED_RMS = ["Moumita Roy"];
-
 function renderLeadsTable(leads) {
   var rmFilter = document.getElementById('d-filter-rm').value;
   var statusFilter = document.getElementById('d-filter-status').value;
 
   var visibleLeads = leads.filter(function (l) {
-    var excluded = (l.rm_names || []).some(function (rm) {
-      return LEAD_DETAILS_EXCLUDED_RMS.indexOf(rm) !== -1;
-    });
-    if (excluded) return false;
     if (rmFilter && (l.rm_names || []).indexOf(rmFilter) === -1) return false;
     if (statusFilter && l.status_raw !== statusFilter) return false;
     return true;
@@ -656,14 +690,11 @@ function renderLeadsTable(leads) {
   });
 }
 
-// Populates the RM / Lead Status dropdowns for the Lead Details tab only.
-// Excludes Moumita Roy from the RM dropdown, since her leads never show here.
+// Populates the RM / Lead Status dropdowns for the Lead Details tab.
 function populateDetailsFilterOptions() {
   var rmSel = document.getElementById('d-filter-rm');
   while (rmSel.options.length > 1) rmSel.remove(1);
-  META.rm_names
-    .filter(function (rm) { return LEAD_DETAILS_EXCLUDED_RMS.indexOf(rm) === -1; })
-    .forEach(function (rm) {
+  META.rm_names.forEach(function (rm) {
       var opt = document.createElement('option');
       opt.value = rm; opt.textContent = rm;
       rmSel.appendChild(opt);
