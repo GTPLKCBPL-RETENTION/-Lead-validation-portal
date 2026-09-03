@@ -369,7 +369,7 @@
                 <th>RM name</th><th class="num">Total leads</th><th class="num">Closed / won</th>
                 <th>Closed by connection type</th>
                 <th>Feedback pending</th>
-                <th class="num">Revenue</th>
+                <th class="num">Revenue<br><span style="font-weight:400; font-size:10px; color:var(--grey);">From leads marked "Lead Close"</span></th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -842,6 +842,22 @@ function isValidLeadStatus_(statusRaw) {
   return VALID_LEAD_STATUSES.indexOf(normalized) !== -1;
 }
 
+// Formats a "YYYY-MM" key (like "2025-07") into a readable label
+// (like "July 2025") for display, without changing the underlying
+// sort keys used everywhere else in this table's logic.
+var MONTH_NUM_TO_NAME = {
+  "01": "January", "02": "February", "03": "March", "04": "April",
+  "05": "May", "06": "June", "07": "July", "08": "August",
+  "09": "September", "10": "October", "11": "November", "12": "December"
+};
+function formatMonthLabel_(yyyyMm) {
+  var parts = String(yyyyMm).split('-');
+  if (parts.length !== 2) return yyyyMm;
+  var year = parts[0], monthNum = parts[1];
+  var monthName = MONTH_NUM_TO_NAME[monthNum];
+  return monthName ? (monthName + ' ' + year) : yyyyMm;
+}
+
 function renderByMonth(leads) {
   var leadCounts = {};
   var validLeadCounts = {};          // count of "valid" leads, keyed by lead month
@@ -881,7 +897,7 @@ function renderByMonth(leads) {
       : '&mdash;';
     var tr = document.createElement('tr');
     tr.innerHTML =
-      '<td>' + m + '</td>' +
+      '<td>' + formatMonthLabel_(m) + '</td>' +
       '<td class="num">' + (leadCounts[m] || 0) + '</td>' +
       '<td class="num">' + (validLeadCounts[m] || 0) + '</td>' +
       '<td class="num">' + (closedByCloseMonth[m] || 0) + '</td>' +
