@@ -333,7 +333,7 @@
     <div class="tab-nav">
       <button class="tab-btn active" data-tab="tab-overview" onclick="switchTab('tab-overview')">Overview</button>
       <button class="tab-btn" data-tab="tab-rm" onclick="switchTab('tab-rm')">RM-wise</button>
-      <button class="tab-btn" data-tab="tab-source" onclick="switchTab('tab-source')">Lead source-wise breakup</button>
+      <button class="tab-btn" data-tab="tab-source" onclick="switchTab('tab-source')">Lead Status & Month-wise Trend</button>
       <button class="tab-btn" data-tab="tab-details" onclick="switchTab('tab-details')">Lead Details</button>
       <button class="tab-btn" data-tab="tab-agent" onclick="switchTab('tab-agent')">Agent Update</button>
       <button class="tab-btn" id="admin-tab-btn" data-tab="tab-admin" onclick="switchTab('tab-admin')" style="display:none;">Admin</button>
@@ -353,17 +353,6 @@
           <h2>Connection type-wise breakup</h2>
           <table id="connection-table">
             <thead><tr><th>Type</th><th class="num">Leads</th><th class="num">Revenue</th><th>Speed / Bandwidth</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-        <div class="panel">
-          <h2>Month-wise trend</h2>
-          <p style="font-size:12px;color:var(--grey);margin-top:-6px;margin-bottom:12px;">
-            "Leads generated" is counted by the lead's original date. "Valid lead count" (also by original date) counts only leads whose status is one of: Feedback Pending from Sales., Hold From Customer End, ISP/P2P Lead, Lead Close, Lead Lost to Competitor, Out of Service Area in West Bengal, Under Discussion with Sales, or RM marked as Not Interested/Required. &mdash; other statuses (Duplicate, Invalid Mobile Number, etc.) are not counted as valid. "Revenue (deals closed)" is counted by the month the deal actually closed &mdash; a lead from one month can close, and add revenue, in a later month.
-          </p>
-          <table id="month-table">
-            <thead><tr><th>Month</th><th class="num">Leads generated</th><th class="num">Valid lead count</th><th class="num">Closed / won</th><th>Closed by connection type</th><th class="num">Revenue (deals closed)</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -395,6 +384,17 @@
           <h2>Lead status breakup</h2>
           <table id="status-table">
             <thead><tr><th>Status</th><th class="num" style="width:70px;">Leads</th><th style="width:60px;">Share</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h2>Month-wise trend</h2>
+          <p style="font-size:12px;color:var(--grey);margin-top:-6px;margin-bottom:12px;">
+            "Leads generated" is counted by the lead's original date. "Valid lead count" (also by original date) counts only leads whose status is one of: Feedback Pending from Sales., Hold From Customer End, ISP/P2P Lead, Lead Close, Lead Lost to Competitor, Out of Service Area in West Bengal, Under Discussion with Sales, or RM marked as Not Interested/Required. &mdash; other statuses (Duplicate, Invalid Mobile Number, etc.) are not counted as valid. "Revenue (deals closed)" is counted by the month the deal actually closed &mdash; a lead from one month can close, and add revenue, in a later month.
+          </p>
+          <table id="month-table">
+            <thead><tr><th>Month</th><th class="num">Leads generated</th><th class="num">Valid lead count</th><th class="num">Closed / won</th><th>Closed by connection type</th><th class="num">Revenue (deals closed)</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
