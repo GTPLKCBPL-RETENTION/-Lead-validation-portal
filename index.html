@@ -62,6 +62,22 @@
   header button:hover { background: #16456e; }
   #refresh-status { font-size: 11px; color: #9fb3c4; }
 
+  /* ---- Details tab filters ---- */
+  .details-filter-bar {
+    display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 16px;
+  }
+  .details-filter-bar .filter-group { display: flex; flex-direction: column; gap: 4px; }
+  .details-filter-bar label { font-size: 11px; color: var(--grey); font-weight: 600; }
+  .details-filter-bar select {
+    padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 13px; min-width: 180px; background: #fff;
+  }
+  .details-filter-bar .clear-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--grey);
+    padding: 7px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; height: 32px;
+  }
+  .details-filter-bar .clear-btn:hover { border-color: var(--red); color: var(--red); }
+
   /* ---- Main layout ---- */
   main { padding: 24px 28px 60px; max-width: 1400px; margin: 0 auto; }
 
@@ -249,6 +265,17 @@
       <div class="panel-grid">
         <div class="panel full-width">
           <h2>Lead details</h2>
+          <div class="details-filter-bar">
+            <div class="filter-group">
+              <label for="d-filter-rm">RM</label>
+              <select id="d-filter-rm"><option value="">All RMs</option></select>
+            </div>
+            <div class="filter-group">
+              <label for="d-filter-status">Lead status</label>
+              <select id="d-filter-status"><option value="">All statuses</option></select>
+            </div>
+            <button class="clear-btn" onclick="clearDetailsFilters()">Clear filters</button>
+          </div>
           <div id="leads-table-wrap">
             <table id="leads-table">
               <thead>
@@ -458,15 +485,23 @@ function renderByConnection(leads) {
 // =============================================================================
 // RENDER: STATUS BREAKUP
 // =============================================================================
+// =============================================================================
+// RENDER: STATUS BREAKUP — shows the ACTUAL raw LEAD STATUS text from the
+// sheet (e.g. "Under Discussion with Sales", "Lead Close"), not the broad
+// category. The pill color still uses the broad category mapping so
+// related statuses are visually grouped.
+// =============================================================================
 function renderByStatus(leads) {
-  var groups = {};
+  var groups = {}; // raw status text -> { count, category }
   leads.forEach(function (l) {
-    var key = l.status_category || 'Uncategorized';
-    groups[key] = (groups[key] || 0) + 1;
+    var key = l.status_raw || '(Blank)';
+    groups[key] = groups[key] || { count: 0, category: l.status_category || 'Uncategorized' };
+    groups[key].count++;
   });
   var total = leads.length || 1;
-  var rows = CATEGORY_ORDER.filter(function (c) { return groups[c]; })
-    .map(function (c) { return { status_category: c, count: groups[c] }; });
+  var rows = Object.keys(groups).map(function (k) {
+    return { status_raw: k, count: groups[k].count, category: groups[k].category };
+  }).sort(function (a, b) { return b.count - a.count; });
 
   var tbody = document.querySelector('#status-table tbody');
   tbody.innerHTML = '';
@@ -475,7 +510,7 @@ function renderByStatus(leads) {
     var pct = Math.round((row.count / total) * 100);
     var tr = document.createElement('tr');
     tr.innerHTML =
-      '<td><span class="status-pill ' + statusClass(row.status_category) + '">' + row.status_category + '</span></td>' +
+      '<td><span class="status-pill ' + statusClass(row.category) + '">' + row.status_raw + '</span></td>' +
       '<td class="num">' + row.count + '</td>' +
       '<td>' + pct + '%</td>';
     tbody.appendChild(tr);
@@ -577,11 +612,28 @@ function renderByRM(leads) {
 
 // =============================================================================
 // RENDER: LEAD DETAILS TABLE
+// This table intentionally excludes leads belonging to Moumita Roy — every
+// other panel (KPIs, RM-wise, Source-wise, etc.) still includes her leads.
 // =============================================================================
+var LEAD_DETAILS_EXCLUDED_RMS = ["Moumita Roy"];
+
 function renderLeadsTable(leads) {
+  var rmFilter = document.getElementById('d-filter-rm').value;
+  var statusFilter = document.getElementById('d-filter-status').value;
+
+  var visibleLeads = leads.filter(function (l) {
+    var excluded = (l.rm_names || []).some(function (rm) {
+      return LEAD_DETAILS_EXCLUDED_RMS.indexOf(rm) !== -1;
+    });
+    if (excluded) return false;
+    if (rmFilter && (l.rm_names || []).indexOf(rmFilter) === -1) return false;
+    if (statusFilter && l.status_raw !== statusFilter) return false;
+    return true;
+  });
+
   var tbody = document.querySelector('#leads-table tbody');
   tbody.innerHTML = '';
-  var limited = leads.slice(0, 300);
+  var limited = visibleLeads.slice(0, 300);
   if (limited.length === 0) {
     tbody.innerHTML = '<tr><td colspan="11" class="empty-note">No leads found</td></tr>';
     return;
@@ -595,13 +647,44 @@ function renderLeadsTable(leads) {
       '<td>' + (l.mobile || '') + '</td>' +
       '<td>' + (l.connection_type || '') + '</td>' +
       '<td>' + ((l.rm_names || []).join(', ')) + '</td>' +
-      '<td><span class="status-pill ' + statusClass(l.status_category) + '">' + l.status_category + '</span></td>' +
+      '<td><span class="status-pill ' + statusClass(l.status_category) + '">' + (l.status_raw || l.status_category) + '</span></td>' +
       '<td class="num">' + (l.price_numeric ? Math.round(l.price_numeric).toLocaleString('en-IN') : '') + '</td>' +
       '<td class="num">' + (l.revenue ? fmtINR(l.revenue) : '') + '</td>' +
       '<td>' + (l.close_month || '') + '</td>' +
       '<td>' + (l.rm_remarks || '') + '</td>';
     tbody.appendChild(tr);
   });
+}
+
+// Populates the RM / Lead Status dropdowns for the Lead Details tab only.
+// Excludes Moumita Roy from the RM dropdown, since her leads never show here.
+function populateDetailsFilterOptions() {
+  var rmSel = document.getElementById('d-filter-rm');
+  while (rmSel.options.length > 1) rmSel.remove(1);
+  META.rm_names
+    .filter(function (rm) { return LEAD_DETAILS_EXCLUDED_RMS.indexOf(rm) === -1; })
+    .forEach(function (rm) {
+      var opt = document.createElement('option');
+      opt.value = rm; opt.textContent = rm;
+      rmSel.appendChild(opt);
+    });
+
+  var statusSel = document.getElementById('d-filter-status');
+  while (statusSel.options.length > 1) statusSel.remove(1);
+  var rawStatuses = Array.from(new Set(
+    ALL_LEADS.map(function (l) { return l.status_raw; }).filter(Boolean)
+  )).sort();
+  rawStatuses.forEach(function (s) {
+    var opt = document.createElement('option');
+    opt.value = s; opt.textContent = s;
+    statusSel.appendChild(opt);
+  });
+}
+
+function clearDetailsFilters() {
+  document.getElementById('d-filter-rm').value = '';
+  document.getElementById('d-filter-status').value = '';
+  renderAll();
 }
 
 // =============================================================================
@@ -620,6 +703,7 @@ function renderAll() {
 
 async function loadAll() {
   await fetchLeadData();
+  populateDetailsFilterOptions();
   renderAll();
 }
 
@@ -627,6 +711,9 @@ async function refreshData() {
   ALL_LEADS = [];
   await loadAll();
 }
+
+document.getElementById('d-filter-rm').addEventListener('change', renderAll);
+document.getElementById('d-filter-status').addEventListener('change', renderAll);
 
 // =============================================================================
 // INIT — restore session if already logged in this browser tab
