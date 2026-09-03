@@ -116,13 +116,24 @@
     padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
     font-size: 13px; width: 100%;
   }
+  .agent-edit-row .filter-group input[type=date] {
+    width: 200px; max-width: 100%;
+  }
   .agent-current-value {
     background: #fff; border: 1px solid var(--border); border-radius: 6px;
     padding: 8px 10px; font-size: 13px; color: var(--grey); min-height: 36px;
   }
+  input.field-invalid {
+    border-color: var(--red) !important;
+    background: #fdecea;
+  }
+  .field-inline-error {
+    color: var(--red); font-size: 11px; margin-top: 4px; display: none;
+  }
+  .field-inline-error.visible { display: block; }
   .agent-speed-row { display: flex; gap: 8px; }
-  .agent-speed-row input { flex: 1; }
-  .agent-speed-row select { width: 100px; }
+  .filter-group .agent-speed-row input[type=number] { flex: 1 1 auto; width: auto; min-width: 0; }
+  .filter-group .agent-speed-row select { width: 100px; flex: 0 0 100px; }
 
   /* ---- Main layout ---- */
   main { padding: 24px 28px 60px; max-width: 1400px; margin: 0 auto; }
@@ -888,9 +899,9 @@ var AGENT_EDITABLE_COLUMNS = [
   { label: "RM Name", header: "RM NAME", type: "select",
     options: ["Nikhil Jha", "Umakant Thakur", "Ashok Pandey", "Pritam Das", "Sudip Bose",
               "Tapas Dandapat", "Tathagata Samasddar", "Moumita Roy", "Partha Ghosh"] },
-  { label: "RM Remarks", header: "RM Remarks", type: "textarea" },
-  { label: "RM Follow Up Date", header: "RM Follow Up Date", type: "date" },
-  { label: "Lead Close Month", header: "LEAD CLOSE MONTH", type: "text" },
+  { label: "RM Remarks", header: "RM Remarks", type: "textarea", skipOnAdd: true },
+  { label: "RM Follow Up Date", header: "RM Follow Up Date", type: "date", skipOnAdd: true },
+  { label: "Lead Close Month", header: "LEAD CLOSE MONTH", type: "text", skipOnAdd: true },
   { label: "Lead Status", header: "LEAD STATUS", type: "select", required: true,
     options: ["Lead Close", "Interested in Home Connection", "Not Interested/ Not Required",
               "Existing BB", "Lead Lost to Competitor", "The customer raised the inquiry incorrectly",
@@ -898,7 +909,7 @@ var AGENT_EDITABLE_COLUMNS = [
               "Out of Service Area (Outside West Bengal)", "Out of Service Area in West Bengal",
               "Duplicate Entry", "Under Discussion with Sales", "ISP/P2P Lead",
               "General Inquiry for Charges", "Feedback Pending from Sales.", "Hold from Customer End"] },
-  { label: "Agent Final Remarks", header: "AGENT FINAL REMARKS", type: "textarea" }
+  { label: "Agent Final Remarks", header: "AGENT FINAL REMARKS", type: "textarea", skipOnAdd: true }
 ];
 
 // Validates a 10-digit Indian mobile number, rejecting all-same-digit
@@ -926,6 +937,34 @@ function validateMobileNumber_(raw) {
     return "Mobile number cannot be a simple sequential number.";
   }
   return null;
+}
+
+// Wires real-time (per-keystroke) validation onto a mobile-number input:
+// shows a red border + inline error message while the value is invalid,
+// clears both once it becomes a valid 10-digit number. Only runs once
+// the user has typed something — an empty field stays neutral instead
+// of showing an error before they've started typing.
+function agentWireMobileLiveValidation(inputId, errorId) {
+  var input = document.getElementById(inputId);
+  var errorEl = document.getElementById(errorId);
+  if (!input || !errorEl) return;
+  input.addEventListener('input', function () {
+    var val = input.value.trim();
+    if (!val) {
+      input.classList.remove('field-invalid');
+      errorEl.classList.remove('visible');
+      return;
+    }
+    var err = validateMobileNumber_(val);
+    if (err) {
+      input.classList.add('field-invalid');
+      errorEl.textContent = err;
+      errorEl.classList.add('visible');
+    } else {
+      input.classList.remove('field-invalid');
+      errorEl.classList.remove('visible');
+    }
+  });
 }
 
 function agentShowStatus(message, type) {
@@ -1071,7 +1110,27 @@ function agentFieldChanged(cardId) {
   } else if (colType === 'mobile') {
     newValueContainer.innerHTML =
       '<label>New value</label>' +
-      '<input type="text" data-role="new-value" inputmode="numeric" placeholder="10-digit mobile number">';
+      '<input type="text" data-role="new-value" inputmode="numeric" placeholder="10-digit mobile number">' +
+      '<div class="field-inline-error" data-role="new-value-error"></div>';
+    var mobileInputEl = newValueContainer.querySelector('[data-role="new-value"]');
+    var mobileErrorEl = newValueContainer.querySelector('[data-role="new-value-error"]');
+    mobileInputEl.addEventListener('input', function () {
+      var val = mobileInputEl.value.trim();
+      if (!val) {
+        mobileInputEl.classList.remove('field-invalid');
+        mobileErrorEl.classList.remove('visible');
+        return;
+      }
+      var err = validateMobileNumber_(val);
+      if (err) {
+        mobileInputEl.classList.add('field-invalid');
+        mobileErrorEl.textContent = err;
+        mobileErrorEl.classList.add('visible');
+      } else {
+        mobileInputEl.classList.remove('field-invalid');
+        mobileErrorEl.classList.remove('visible');
+      }
+    });
   } else if (colType === 'number') {
     newValueContainer.innerHTML =
       '<label>New value</label>' +
@@ -1165,7 +1224,7 @@ function toggleAddLeadForm() {
 
 function renderAddLeadFields() {
   var container = document.getElementById('add-lead-fields');
-  container.innerHTML = AGENT_EDITABLE_COLUMNS.map(function (col) {
+  container.innerHTML = AGENT_EDITABLE_COLUMNS.filter(function (col) { return !col.skipOnAdd; }).map(function (col) {
     var fieldId = 'new-lead-field-' + col.header.replace(/[^a-zA-Z0-9]/g, '-');
     var labelText = col.label + (col.required ? ' <span style="color:var(--red)">*</span>' : '');
 
@@ -1191,7 +1250,8 @@ function renderAddLeadFields() {
     } else if (col.type === 'date') {
       inputHtml = '<input type="date" id="' + fieldId + '">';
     } else if (col.type === 'mobile') {
-      inputHtml = '<input type="text" id="' + fieldId + '" inputmode="numeric" placeholder="10-digit mobile number">';
+      inputHtml = '<input type="text" id="' + fieldId + '" inputmode="numeric" placeholder="10-digit mobile number">' +
+        '<div class="field-inline-error" id="' + fieldId + '-error"></div>';
     } else if (col.type === 'number') {
       inputHtml = '<input type="number" step="any" id="' + fieldId + '" placeholder="Leave blank for 0">';
     } else {
@@ -1207,6 +1267,13 @@ function renderAddLeadFields() {
       '</div>'
     );
   }).join('');
+
+  // Wire up live validation on the Mobile No field.
+  var mobileCol = AGENT_EDITABLE_COLUMNS.filter(function (c) { return c.type === 'mobile'; })[0];
+  if (mobileCol) {
+    var mobileFieldId = 'new-lead-field-' + mobileCol.header.replace(/[^a-zA-Z0-9]/g, '-');
+    agentWireMobileLiveValidation(mobileFieldId, mobileFieldId + '-error');
+  }
 }
 
 async function submitNewLead() {
@@ -1215,6 +1282,7 @@ async function submitNewLead() {
   var errors = [];
 
   AGENT_EDITABLE_COLUMNS.forEach(function (col) {
+    if (col.skipOnAdd) return;
     var fieldId = 'new-lead-field-' + col.header.replace(/[^a-zA-Z0-9]/g, '-');
 
     if (col.type === 'speed') {
