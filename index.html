@@ -20,29 +20,29 @@
   * { box-sizing: border-box; }
   body { margin:0; font-family:'Segoe UI',Arial,sans-serif; background:var(--bg); color:var(--text); }
 
-  /* ---- Login / email-gate screens (shared look) ---- */
-  #login-screen, #email-gate-screen {
+  /* ---- Login screen ---- */
+  #login-screen {
     min-height: 100vh;
     display: flex; align-items: center; justify-content: center;
     background: linear-gradient(135deg, var(--navy), var(--blue));
   }
-  #login-screen .card, #email-gate-screen .card {
+  #login-screen .card {
     background: #fff; padding: 40px 36px; border-radius: 12px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.25); width: 100%; max-width: 380px;
   }
-  #login-screen h1, #email-gate-screen h1 { font-size: 20px; color: var(--navy); margin: 0 0 4px; }
-  #login-screen p.sub, #email-gate-screen p.sub { color: #667; font-size: 13px; margin: 0 0 24px; }
-  #login-screen label, #email-gate-screen label { font-size: 13px; color: #445; display: block; margin-bottom: 6px; font-weight: 600; }
-  #login-screen input[type=password], #email-gate-screen input[type=email] {
+  #login-screen h1 { font-size: 20px; color: var(--navy); margin: 0 0 4px; }
+  #login-screen p.sub { color: #667; font-size: 13px; margin: 0 0 24px; }
+  #login-screen label { font-size: 13px; color: #445; display: block; margin-bottom: 6px; font-weight: 600; }
+  #login-screen input[type=password] {
     width: 100%; padding: 12px 14px; border: 1px solid #d7dee6; border-radius: 8px;
     font-size: 14px; margin-bottom: 18px;
   }
-  #login-screen button, #email-gate-screen button {
+  #login-screen button {
     width: 100%; padding: 12px; background: var(--blue); color: #fff; border: none;
     border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;
   }
-  #login-screen button:hover, #email-gate-screen button:hover { background: var(--navy); }
-  #login-error, .gate-error {
+  #login-screen button:hover { background: var(--navy); }
+  #login-error {
     background: #fdecea; color: #b3261e; padding: 10px 12px; border-radius: 6px;
     font-size: 13px; margin-bottom: 16px; display: none;
   }
@@ -271,27 +271,11 @@
 <body>
 
 <!-- ============================================================
-     EMAIL GATE SCREEN — shown first, before the password screen.
-     Checks the entered email against the "Allowed Emails" sheet tab.
+     LOGIN SCREEN — single password screen. The password entered
+     determines the role: General password = normal access,
+     Admin password = normal access + Admin tab unlocked.
      ============================================================ -->
-<div id="email-gate-screen">
-  <div class="card">
-    <img src="https://raw.githubusercontent.com/GTPLKCBPL-RETENTION/-Lead-validation-portal/main/logo.png" alt="GTPL KCBPL logo" style="height:48px; width:auto; margin-bottom:16px; border-radius:4px;">
-    <h1>Sales Coordinator Dashboard</h1>
-    <p class="sub">GTPL KCBPL &mdash; Lead &amp; Revenue Tracker</p>
-    <div id="email-gate-error" class="gate-error">This email does not have access. Contact your administrator.</div>
-    <form id="email-gate-form">
-      <label for="gate-email">Email address</label>
-      <input type="email" id="gate-email" autofocus required placeholder="you@example.com">
-      <button type="submit">Continue</button>
-    </form>
-  </div>
-</div>
-
-<!-- ============================================================
-     LOGIN SCREEN
-     ============================================================ -->
-<div id="login-screen" style="display:none;">
+<div id="login-screen">
   <div class="card">
     <img src="https://raw.githubusercontent.com/GTPLKCBPL-RETENTION/-Lead-validation-portal/main/logo.png" alt="GTPL KCBPL logo" style="height:48px; width:auto; margin-bottom:16px; border-radius:4px;">
     <h1>Sales Coordinator Dashboard</h1>
@@ -368,7 +352,7 @@
         <div class="panel">
           <h2>Month-wise trend</h2>
           <p style="font-size:12px;color:var(--grey);margin-top:-6px;margin-bottom:12px;">
-            "Leads generated" is counted by the lead's original date. "Valid lead count" (also by original date) counts only leads whose status is one of: Feedback Pending from Sales., Hold From Customer End, ISP/P2P Lead, Lead Close, Lead Lost to Competitor, Out of Service Area in West Bengal, or Under Discussion with Sales &mdash; other statuses (Duplicate, Invalid Mobile Number, etc.) are not counted as valid. "Revenue (deals closed)" is counted by the month the deal actually closed &mdash; a lead from one month can close, and add revenue, in a later month.
+            "Leads generated" is counted by the lead's original date. "Valid lead count" (also by original date) counts only leads whose status is one of: Feedback Pending from Sales., Hold From Customer End, ISP/P2P Lead, Lead Close, Lead Lost to Competitor, Out of Service Area in West Bengal, Under Discussion with Sales, or RM marked as Not Interested/Required. &mdash; other statuses (Duplicate, Invalid Mobile Number, etc.) are not counted as valid. "Revenue (deals closed)" is counted by the month the deal actually closed &mdash; a lead from one month can close, and add revenue, in a later month.
           </p>
           <table id="month-table">
             <thead><tr><th>Month</th><th class="num">Leads generated</th><th class="num">Valid lead count</th><th class="num">Closed / won</th><th>Closed by connection type</th><th class="num">Revenue (deals closed)</th></tr></thead>
@@ -528,16 +512,17 @@
 var API_BASE = "https://script.google.com/macros/s/AKfycbycIQ5sAAUr_7b1yXNH_JXr0g-uzf60Cfki8mz1wE7rAzNOoJFirTeyihyURXD8Yq44uA/exec";
 
 // Client-side password gate. NOTE: this is NOT secure — anyone who views
-// the page source can read this value. It only blocks casual/accidental
-// access, same as the Retention Team portal. Do not put this URL in front
-// of data that truly must stay private.
-var DASHBOARD_PASSWORD = "salescoord2026";
+// the page source can read these values. It only blocks casual/accidental
+// access. Do not put this URL in front of data that truly must stay private.
+var GENERAL_PASSWORD = "GTPLKCBPL";
+var ADMIN_PASSWORD = "admin2026"; // logging in with this password also unlocks the Admin tab
 
 // =============================================================================
 // STATE
 // =============================================================================
 var ALL_LEADS = [];
 var META = { rm_names: [], lead_sources: [], connection_types: [], status_categories: [] };
+var IS_ADMIN_SESSION = false; // set true when login used ADMIN_PASSWORD
 
 var CATEGORY_ORDER = [
   "Closed / Won", "Interested", "Not Interested", "No Response",
@@ -549,11 +534,8 @@ var CATEGORY_ORDER = [
 // TABS
 // =============================================================================
 function switchTab(tabId) {
-  if (tabId === 'tab-admin') {
-    var verifiedEmail = (sessionStorage.getItem('sc_email_verified') || '').trim().toLowerCase();
-    if (verifiedEmail !== ADMIN_EMAIL) {
-      tabId = 'tab-overview'; // not the admin — redirect quietly
-    }
+  if (tabId === 'tab-admin' && !IS_ADMIN_SESSION) {
+    tabId = 'tab-overview'; // not the admin — redirect quietly
   }
   document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
   document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
@@ -562,41 +544,20 @@ function switchTab(tabId) {
 }
 
 // =============================================================================
-// EMAIL GATE + LOGIN
+// LOGIN — one password field, two possible passwords. The General password
+// grants normal access; the Admin password grants normal access plus the
+// Admin tab.
 // =============================================================================
-document.getElementById('email-gate-form').addEventListener('submit', async function (e) {
-  e.preventDefault();
-  var email = document.getElementById('gate-email').value.trim();
-  var errorEl = document.getElementById('email-gate-error');
-  errorEl.style.display = 'none';
-
-  try {
-    var data = await agentPostToScript({ action: 'check_email', email: email });
-    if (data.success && data.allowed) {
-      sessionStorage.setItem('sc_email_verified', email);
-      sessionStorage.setItem('sc_logged_in', '1');
-      showDashboard();
-    } else {
-      errorEl.textContent = 'This email does not have access. Contact your administrator.';
-      errorEl.style.display = 'block';
-    }
-  } catch (err) {
-    errorEl.textContent = 'Could not verify email. Please try again.';
-    errorEl.style.display = 'block';
-    console.error(err);
-  }
-});
-
-function showLoginScreen() {
-  document.getElementById('email-gate-screen').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-}
-
 document.getElementById('login-form').addEventListener('submit', function (e) {
   e.preventDefault();
   var pwd = document.getElementById('password').value;
-  if (pwd === DASHBOARD_PASSWORD) {
+  if (pwd === ADMIN_PASSWORD) {
     sessionStorage.setItem('sc_logged_in', '1');
+    sessionStorage.setItem('sc_is_admin', '1');
+    showDashboard();
+  } else if (pwd === GENERAL_PASSWORD) {
+    sessionStorage.setItem('sc_logged_in', '1');
+    sessionStorage.setItem('sc_is_admin', '0');
     showDashboard();
   } else {
     document.getElementById('login-error').style.display = 'block';
@@ -605,27 +566,22 @@ document.getElementById('login-form').addEventListener('submit', function (e) {
 
 function logout() {
   sessionStorage.removeItem('sc_logged_in');
-  sessionStorage.removeItem('sc_email_verified');
+  sessionStorage.removeItem('sc_is_admin');
   document.getElementById('dashboard-screen').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('email-gate-screen').style.display = 'flex';
+  document.getElementById('login-screen').style.display = 'flex';
 }
 
-// The only email allowed to see/use the Admin tab.
-var ADMIN_EMAIL = "gtplkcbplretention2022@gmail.com";
-
 function isCurrentUserAdmin_() {
-  var verifiedEmail = (sessionStorage.getItem('sc_email_verified') || '').trim().toLowerCase();
-  return verifiedEmail === ADMIN_EMAIL;
+  return IS_ADMIN_SESSION;
 }
 
 function showDashboard() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'block';
 
-  var verifiedEmail = (sessionStorage.getItem('sc_email_verified') || '').trim().toLowerCase();
+  IS_ADMIN_SESSION = sessionStorage.getItem('sc_is_admin') === '1';
   var adminBtn = document.getElementById('admin-tab-btn');
-  if (verifiedEmail === ADMIN_EMAIL) {
+  if (IS_ADMIN_SESSION) {
     adminBtn.style.display = '';
   } else {
     adminBtn.style.display = 'none';
@@ -867,7 +823,7 @@ function renderByStatus(leads) {
 // this is a DIFFERENT month field, not the same as lead_month, since a
 // lead generated in one month can close in a later month.
 // =============================================================================
-// A lead is "valid" if its raw LEAD STATUS is one of these 7 (case-
+// A lead is "valid" if its raw LEAD STATUS is one of these 8 (case-
 // insensitive match, since the sheet's exact casing can vary — e.g.
 // "Hold From Customer End" with a capital F).
 var VALID_LEAD_STATUSES = [
@@ -877,7 +833,8 @@ var VALID_LEAD_STATUSES = [
   "Lead Close",
   "Lead Lost to Competitor",
   "Out of Service Area in West Bengal",
-  "Under Discussion with Sales"
+  "Under Discussion with Sales",
+  "RM marked as Not Interested/Required."
 ].map(function (s) { return s.trim().toLowerCase(); });
 
 function isValidLeadStatus_(statusRaw) {
@@ -1211,12 +1168,16 @@ function agentHideStatus() {
 }
 
 // text/plain avoids the CORS preflight that Apps Script can't answer —
-// see Code.gs's doPost comment for why this matters.
+// see Code.gs's doPost comment for why this matters. Apps Script also
+// redirects internally (script.google.com -> googleusercontent.com),
+// so redirect:'follow' is required or the fetch fails with a generic
+// "NetworkError" before it ever reaches Code.gs.
 async function agentPostToScript(payload) {
   var res = await fetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+    redirect: 'follow'
   });
   return res.json();
 }
@@ -1849,7 +1810,7 @@ switchTab = function (tabId) {
   if (loggedIn === '1') {
     showDashboard();
   }
-  // else: default state is the email-gate screen, already visible.
+  // else: default state is the login screen, already visible.
 })();
 </script>
 </body>
