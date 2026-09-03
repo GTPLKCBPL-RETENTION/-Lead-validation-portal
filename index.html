@@ -262,7 +262,7 @@
         <div class="panel">
           <h2>Connection type-wise breakup</h2>
           <table id="connection-table">
-            <thead><tr><th>Type</th><th class="num">Leads</th><th class="num">Revenue</th></tr></thead>
+            <thead><tr><th>Type</th><th class="num">Leads</th><th class="num">Revenue</th><th>Speed / Bandwidth</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -309,7 +309,7 @@
 // =============================================================================
 // Paste your Google Apps Script Web App URL here (see Code.gs install steps).
 // Looks like: https://script.google.com/macros/s/XXXXXXXXXXXX/exec
-var API_BASE = "https://script.google.com/macros/s/AKfycbwFkiUByuaa6X_Lu0cwaf0dbQG_bX-w240C4rc3L7jU3-vcOx08w-btfAkYyoPFF9MKWw/exec";
+var API_BASE = "https://script.google.com/macros/s/AKfycbyr2seD_wS8TN2m-I_LkXEI5nfV4qKjsCmvlejWVFFfX-TVTOe37LeNaB-DAeCg-oXqdQ/exec";
 
 // Client-side password gate. NOTE: this is NOT secure — anyone who views
 // the page source can read this value. It only blocks casual/accidental
@@ -371,6 +371,16 @@ function showDashboard() {
 function fmtINR(n) {
   if (n === null || n === undefined || isNaN(n)) return '&mdash;';
   return '\u20B9' + Math.round(n).toLocaleString('en-IN');
+}
+
+// Formats a Mbps total, switching to Gbps for readability above 1000 Mbps.
+function formatMbps_(mbps) {
+  if (mbps >= 1000) {
+    var gbps = mbps / 1000;
+    var rounded = Math.round(gbps * 100) / 100;
+    return rounded + ' Gbps';
+  }
+  return Math.round(mbps * 100) / 100 + ' Mbps';
 }
 
 function statusClass(cat) {
@@ -503,23 +513,38 @@ function renderByConnection(leads) {
   var groups = {};
   leads.forEach(function (l) {
     var key = l.connection_type || 'OTHER';
-    groups[key] = groups[key] || { leads: 0, revenue: 0 };
+    groups[key] = groups[key] || { leads: 0, revenue: 0, speeds: {}, totalMbps: 0 };
     groups[key].leads++;
     groups[key].revenue += (l.revenue || 0);
+    var speed = (l.speed || '').toString().trim();
+    if (speed) groups[key].speeds[speed] = true;
+    // Total bandwidth is summed only across closed/won leads.
+    if (l.status_category === 'Closed / Won' && typeof l.speed_mbps === 'number') {
+      groups[key].totalMbps += l.speed_mbps;
+    }
   });
   var rows = Object.keys(groups).map(function (k) {
-    return { connection_type: k, leads: groups[k].leads, revenue: groups[k].revenue };
+    return {
+      connection_type: k, leads: groups[k].leads, revenue: groups[k].revenue,
+      speeds: Object.keys(groups[k].speeds).sort(),
+      total_mbps: groups[k].totalMbps
+    };
   }).sort(function (a, b) { return b.leads - a.leads; });
 
   var tbody = document.querySelector('#connection-table tbody');
   tbody.innerHTML = '';
-  if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="empty-note">No data</td></tr>'; return; }
+  if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="empty-note">No data</td></tr>'; return; }
   rows.forEach(function (row) {
+    var speedText = row.speeds.length ? row.speeds.join(', ') : '&mdash;';
+    var totalText = row.total_mbps > 0
+      ? ' &mdash; <strong>Total: ' + formatMbps_(row.total_mbps) + '</strong>'
+      : '';
     var tr = document.createElement('tr');
     tr.innerHTML =
       '<td>' + row.connection_type + '</td>' +
       '<td class="num">' + row.leads + '</td>' +
-      '<td class="num">' + fmtINR(row.revenue) + '</td>';
+      '<td class="num">' + fmtINR(row.revenue) + '</td>' +
+      '<td style="font-size:12px;color:var(--grey)">' + speedText + totalText + '</td>';
     tbody.appendChild(tr);
   });
 }
