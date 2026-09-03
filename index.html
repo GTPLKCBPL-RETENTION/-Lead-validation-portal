@@ -872,23 +872,61 @@ document.getElementById('d-filter-status').addEventListener('change', renderAll)
 // Column list shown in the dropdown — label must exactly match what
 // Code.gs's EDITABLE_COLUMNS sends back as the key in "values".
 var AGENT_EDITABLE_COLUMNS = [
-  { label: "Lead Source", header: "LEAD SOURCE" },
-  { label: "Company Name & Address", header: "Company Name & Address" },
-  { label: "Type of Connection", header: "TYPE OF CONNECTION" },
-  { label: "Speed / Bandwidth", header: "Speed / Bandwidth" },
-  { label: "Price (Rs.)", header: "Price (Rs.)" },
-  { label: "Contact Person Name", header: "Contact Person name" },
-  { label: "Mobile No", header: "Mobile No" },
-  { label: "Pin Code", header: "Pin Code" },
-  { label: "Caller Name", header: "Caller Name" },
-  { label: "Remarks", header: "REMARKS" },
-  { label: "RM Name", header: "RM NAME" },
-  { label: "RM Remarks", header: "RM Remarks" },
-  { label: "RM Follow Up Date", header: "RM Follow Up Date" },
-  { label: "Lead Close Month", header: "LEAD CLOSE MONTH" },
-  { label: "Lead Status", header: "LEAD STATUS" },
-  { label: "Agent Final Remarks", header: "AGENT FINAL REMARKS" }
+  { label: "Lead Source", header: "LEAD SOURCE", type: "select", required: true,
+    options: ["GTPLKCBPL campaign lead", "ILL campaign Call Back", "ILL campaign Incoming Call", "Whats App Lead"] },
+  { label: "Company Name & Address", header: "Company Name & Address", type: "textarea" },
+  { label: "Type of Connection", header: "TYPE OF CONNECTION", type: "select", required: true,
+    options: ["CORPORATE BB", "ILL", "OTHER", "P2P"] },
+  { label: "Speed / Bandwidth", header: "Speed / Bandwidth", type: "speed", defaultZero: true },
+  { label: "Price (Rs.)", header: "Price (Rs.)", type: "number", defaultZero: true },
+  { label: "Contact Person Name", header: "Contact Person name", type: "text" },
+  { label: "Mobile No", header: "Mobile No", type: "mobile", required: true },
+  { label: "Pin Code", header: "Pin Code", type: "text" },
+  { label: "Caller Name", header: "Caller Name", type: "select", required: true,
+    options: ["Moumita Roy"] },
+  { label: "Remarks", header: "REMARKS", type: "textarea" },
+  { label: "RM Name", header: "RM NAME", type: "select",
+    options: ["Nikhil Jha", "Umakant Thakur", "Ashok Pandey", "Pritam Das", "Sudip Bose",
+              "Tapas Dandapat", "Tathagata Samasddar", "Moumita Roy", "Partha Ghosh"] },
+  { label: "RM Remarks", header: "RM Remarks", type: "textarea" },
+  { label: "RM Follow Up Date", header: "RM Follow Up Date", type: "date" },
+  { label: "Lead Close Month", header: "LEAD CLOSE MONTH", type: "text" },
+  { label: "Lead Status", header: "LEAD STATUS", type: "select", required: true,
+    options: ["Lead Close", "Interested in Home Connection", "Not Interested/ Not Required",
+              "Existing BB", "Lead Lost to Competitor", "The customer raised the inquiry incorrectly",
+              "Invalid / Incorrect Mobile Number", "Call disconnected / No Response; 3 retries failed.",
+              "Out of Service Area (Outside West Bengal)", "Out of Service Area in West Bengal",
+              "Duplicate Entry", "Under Discussion with Sales", "ISP/P2P Lead",
+              "General Inquiry for Charges", "Feedback Pending from Sales.", "Hold from Customer End"] },
+  { label: "Agent Final Remarks", header: "AGENT FINAL REMARKS", type: "textarea" }
 ];
+
+// Validates a 10-digit Indian mobile number, rejecting all-same-digit
+// ("0000000000") and simple ascending/descending sequences ("1234567890",
+// "0987654321"). Returns an error string, or null if valid.
+function validateMobileNumber_(raw) {
+  var digits = String(raw || "").replace(/\D/g, "");
+  if (digits.length !== 10) {
+    return "Mobile number must be exactly 10 digits.";
+  }
+  if (/^(\d)\1{9}$/.test(digits)) {
+    return "Mobile number cannot be all the same digit.";
+  }
+  // Exact digit-by-digit step check for a strictly ascending or
+  // descending run (e.g. "1234567890", "9876543210"), wrap-around
+  // included (e.g. "9012345678").
+  var isAscending = true, isDescending = true;
+  for (var i = 1; i < digits.length; i++) {
+    var prev = parseInt(digits[i - 1], 10);
+    var cur = parseInt(digits[i], 10);
+    if (cur !== (prev + 1) % 10) isAscending = false;
+    if (cur !== (prev - 1 + 10) % 10) isDescending = false;
+  }
+  if (isAscending || isDescending) {
+    return "Mobile number cannot be a simple sequential number.";
+  }
+  return null;
+}
 
 function agentShowStatus(message, type) {
   var el = document.getElementById('agent-search-status');
@@ -1001,7 +1039,10 @@ function agentFieldChanged(cardId) {
   currentValueEl.textContent = (currentVal === null || currentVal === undefined || currentVal === '') ? '(blank)' : currentVal;
   newValueRow.style.display = 'grid';
 
-  if (header === 'Speed / Bandwidth') {
+  var col = AGENT_EDITABLE_COLUMNS.filter(function (c) { return c.header === header; })[0];
+  var colType = col ? col.type : 'text';
+
+  if (colType === 'speed') {
     newValueContainer.innerHTML =
       '<label>New value</label>' +
       '<div class="agent-speed-row">' +
@@ -1012,10 +1053,29 @@ function agentFieldChanged(cardId) {
           '<option value="Kbps">Kbps</option>' +
         '</select>' +
       '</div>';
-  } else if (header === 'RM Remarks' || header === 'Remarks' || header === 'Agent Final Remarks') {
+  } else if (colType === 'select') {
+    newValueContainer.innerHTML =
+      '<label>New value</label>' +
+      '<select data-role="new-value">' +
+        '<option value="">Choose&hellip;</option>' +
+        col.options.map(function (opt) { return '<option value="' + opt + '">' + opt + '</option>'; }).join('') +
+      '</select>';
+  } else if (colType === 'textarea') {
     newValueContainer.innerHTML =
       '<label>New value</label>' +
       '<textarea data-role="new-value" rows="2"></textarea>';
+  } else if (colType === 'date') {
+    newValueContainer.innerHTML =
+      '<label>New value</label>' +
+      '<input type="date" data-role="new-value">';
+  } else if (colType === 'mobile') {
+    newValueContainer.innerHTML =
+      '<label>New value</label>' +
+      '<input type="text" data-role="new-value" inputmode="numeric" placeholder="10-digit mobile number">';
+  } else if (colType === 'number') {
+    newValueContainer.innerHTML =
+      '<label>New value</label>' +
+      '<input type="number" step="any" data-role="new-value">';
   } else {
     newValueContainer.innerHTML =
       '<label>New value</label>' +
@@ -1049,6 +1109,15 @@ async function agentSubmitUpdate(cardId, sheetRowNumber) {
     newValue = num + ' ' + unit;
   } else {
     newValue = card.querySelector('[data-role="new-value"]').value.trim();
+    if (header === 'Mobile No') {
+      var mobileError = validateMobileNumber_(newValue);
+      if (mobileError) {
+        statusEl.className = 'agent-status-msg error';
+        statusEl.textContent = mobileError;
+        statusEl.style.display = 'block';
+        return;
+      }
+    }
   }
 
   var mobile = document.getElementById('agent-mobile-input').value.trim();
@@ -1098,34 +1167,41 @@ function renderAddLeadFields() {
   var container = document.getElementById('add-lead-fields');
   container.innerHTML = AGENT_EDITABLE_COLUMNS.map(function (col) {
     var fieldId = 'new-lead-field-' + col.header.replace(/[^a-zA-Z0-9]/g, '-');
+    var labelText = col.label + (col.required ? ' <span style="color:var(--red)">*</span>' : '');
 
-    if (col.header === 'Speed / Bandwidth') {
-      return (
-        '<div class="agent-edit-row" style="grid-template-columns:1fr;">' +
-          '<div class="filter-group">' +
-            '<label>' + col.label + '</label>' +
-            '<div class="agent-speed-row">' +
-              '<input type="number" step="any" id="' + fieldId + '-number" placeholder="e.g. 100">' +
-              '<select id="' + fieldId + '-unit">' +
-                '<option value="Mbps">Mbps</option>' +
-                '<option value="Gbps">Gbps</option>' +
-                '<option value="Kbps">Kbps</option>' +
-              '</select>' +
-            '</div>' +
-          '</div>' +
-        '</div>'
-      );
+    var inputHtml;
+    if (col.type === 'speed') {
+      inputHtml =
+        '<div class="agent-speed-row">' +
+          '<input type="number" step="any" id="' + fieldId + '-number" placeholder="e.g. 100 (leave blank for 0)">' +
+          '<select id="' + fieldId + '-unit">' +
+            '<option value="Mbps">Mbps</option>' +
+            '<option value="Gbps">Gbps</option>' +
+            '<option value="Kbps">Kbps</option>' +
+          '</select>' +
+        '</div>';
+    } else if (col.type === 'select') {
+      inputHtml =
+        '<select id="' + fieldId + '">' +
+          '<option value="">Choose&hellip;</option>' +
+          col.options.map(function (opt) { return '<option value="' + opt + '">' + opt + '</option>'; }).join('') +
+        '</select>';
+    } else if (col.type === 'textarea') {
+      inputHtml = '<textarea id="' + fieldId + '" rows="2"></textarea>';
+    } else if (col.type === 'date') {
+      inputHtml = '<input type="date" id="' + fieldId + '">';
+    } else if (col.type === 'mobile') {
+      inputHtml = '<input type="text" id="' + fieldId + '" inputmode="numeric" placeholder="10-digit mobile number">';
+    } else if (col.type === 'number') {
+      inputHtml = '<input type="number" step="any" id="' + fieldId + '" placeholder="Leave blank for 0">';
+    } else {
+      inputHtml = '<input type="text" id="' + fieldId + '">';
     }
-
-    var isTextarea = (col.header === 'RM Remarks' || col.header === 'REMARKS' || col.header === 'AGENT FINAL REMARKS' || col.header === 'Company Name & Address');
-    var inputHtml = isTextarea
-      ? '<textarea id="' + fieldId + '" rows="2"></textarea>'
-      : '<input type="text" id="' + fieldId + '">';
 
     return (
       '<div class="agent-edit-row" style="grid-template-columns:1fr;">' +
         '<div class="filter-group">' +
-          '<label>' + col.label + '</label>' +
+          '<label>' + labelText + '</label>' +
           inputHtml +
         '</div>' +
       '</div>'
@@ -1136,22 +1212,48 @@ function renderAddLeadFields() {
 async function submitNewLead() {
   var statusEl = document.getElementById('add-lead-status');
   var fields = {};
+  var errors = [];
 
   AGENT_EDITABLE_COLUMNS.forEach(function (col) {
     var fieldId = 'new-lead-field-' + col.header.replace(/[^a-zA-Z0-9]/g, '-');
-    if (col.header === 'Speed / Bandwidth') {
+
+    if (col.type === 'speed') {
       var num = document.getElementById(fieldId + '-number').value.trim();
       var unit = document.getElementById(fieldId + '-unit').value;
-      if (num) fields[col.header] = num + ' ' + unit;
-    } else {
-      var val = document.getElementById(fieldId).value.trim();
-      if (val) fields[col.header] = val;
+      if (num) {
+        fields[col.header] = num + ' ' + unit;
+      } else if (col.defaultZero) {
+        fields[col.header] = '0';
+      }
+      return;
     }
+
+    var val = document.getElementById(fieldId).value.trim();
+
+    if (col.type === 'mobile') {
+      var mobileError = validateMobileNumber_(val);
+      if (mobileError) {
+        errors.push(mobileError);
+        return;
+      }
+    }
+
+    if (!val && col.defaultZero) {
+      fields[col.header] = '0';
+      return;
+    }
+
+    if (!val && col.required) {
+      errors.push(col.label + ' is required.');
+      return;
+    }
+
+    if (val) fields[col.header] = val;
   });
 
-  if (!fields['Mobile No']) {
+  if (errors.length > 0) {
     statusEl.className = 'agent-status-msg error';
-    statusEl.textContent = 'Mobile No is required.';
+    statusEl.textContent = errors.join(' ');
     statusEl.style.display = 'block';
     return;
   }
