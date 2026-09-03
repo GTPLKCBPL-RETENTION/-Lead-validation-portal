@@ -62,24 +62,6 @@
   header button:hover { background: #16456e; }
   #refresh-status { font-size: 11px; color: #9fb3c4; }
 
-  /* ---- Filter bar ---- */
-  .filter-bar {
-    background: var(--card); border-bottom: 1px solid var(--border); padding: 14px 28px;
-    display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;
-    position: sticky; top: 0; z-index: 10;
-  }
-  .filter-group { display: flex; flex-direction: column; gap: 4px; }
-  .filter-group label { font-size: 11px; color: var(--grey); font-weight: 600; }
-  .filter-group select, .filter-group input[type=date] {
-    padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
-    font-size: 13px; min-width: 150px; background: #fff;
-  }
-  .filter-bar .clear-btn {
-    background: transparent; border: 1px solid var(--border); color: var(--grey);
-    padding: 7px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; height: 32px;
-  }
-  .filter-bar .clear-btn:hover { border-color: var(--red); color: var(--red); }
-
   /* ---- Main layout ---- */
   main { padding: 24px 28px 60px; max-width: 1400px; margin: 0 auto; }
 
@@ -179,34 +161,6 @@
     </div>
   </header>
 
-  <div class="filter-bar">
-    <div class="filter-group">
-      <label for="f-month">Month</label>
-      <select id="f-month"><option value="">All months</option></select>
-    </div>
-    <div class="filter-group">
-      <label for="f-rm">RM</label>
-      <select id="f-rm"><option value="">All RMs</option></select>
-    </div>
-    <div class="filter-group">
-      <label for="f-source">Lead source</label>
-      <select id="f-source"><option value="">All sources</option></select>
-    </div>
-    <div class="filter-group">
-      <label for="f-connection">Connection type</label>
-      <select id="f-connection"><option value="">All types</option></select>
-    </div>
-    <div class="filter-group">
-      <label for="f-date-from">From date</label>
-      <input type="date" id="f-date-from">
-    </div>
-    <div class="filter-group">
-      <label for="f-date-to">To date</label>
-      <input type="date" id="f-date-to">
-    </div>
-    <button class="clear-btn" onclick="clearFilters()">Clear filters</button>
-  </div>
-
   <main>
     <div id="loading-banner" class="loading-banner" style="display:none;">Loading data&hellip;</div>
 
@@ -261,6 +215,7 @@
             <thead>
               <tr>
                 <th>RM name</th><th class="num">Total leads</th><th class="num">Closed / won</th>
+                <th>Closed by connection type</th>
                 <th class="num">Interested</th><th class="num">Not interested</th><th class="num">Revenue</th>
               </tr>
             </thead>
@@ -275,7 +230,7 @@
         <div class="panel">
           <h2>Lead source-wise breakup</h2>
           <table id="source-table">
-            <thead><tr><th>Source</th><th class="num">Leads</th><th>Share</th></tr></thead>
+            <thead><tr><th>Source</th><th class="num">Leads</th><th class="num">Closed count</th><th class="num">Revenue</th><th>Share</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -301,6 +256,7 @@
                   <th>Date</th><th>Source</th><th>Contact</th><th>Mobile</th>
                   <th>Connection</th><th>RM</th><th>Status</th>
                   <th class="num">Price</th><th class="num">Revenue</th><th>Close month</th>
+                  <th>RM Remarks</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -318,7 +274,7 @@
 // =============================================================================
 // Paste your Google Apps Script Web App URL here (see Code.gs install steps).
 // Looks like: https://script.google.com/macros/s/XXXXXXXXXXXX/exec
-var API_BASE = "https://script.google.com/macros/s/AKfycbyOgBeGwVBAso4ReEmIEjIvBI_BtFCfm_PCcxR7k6I55sDgk90hLvifwS4diJFy6t_cUQ/exec";
+var API_BASE = "https://script.google.com/macros/s/AKfycbwFkiUByuaa6X_Lu0cwaf0dbQG_bX-w240C4rc3L7jU3-vcOx08w-btfAkYyoPFF9MKWw/exec";
 
 // Client-side password gate. NOTE: this is NOT secure — anyone who views
 // the page source can read this value. It only blocks casual/accidental
@@ -416,67 +372,10 @@ async function fetchLeadData() {
 }
 
 // =============================================================================
-// FILTERS
+// FILTERS — removed per request; all views always show the full dataset.
 // =============================================================================
 function getFilteredLeads() {
-  var month = document.getElementById('f-month').value;
-  var rm = document.getElementById('f-rm').value;
-  var source = document.getElementById('f-source').value;
-  var conn = document.getElementById('f-connection').value;
-  var dateFrom = document.getElementById('f-date-from').value;
-  var dateTo = document.getElementById('f-date-to').value;
-
-  return ALL_LEADS.filter(function (lead) {
-    if (month && lead.lead_month !== month) return false;
-    if (rm && (lead.rm_names || []).indexOf(rm) === -1) return false;
-    if (source && lead.lead_source !== source) return false;
-    if (conn && lead.connection_type !== conn) return false;
-    if (dateFrom && lead.lead_date && lead.lead_date < dateFrom) return false;
-    if (dateTo && lead.lead_date && lead.lead_date > dateTo) return false;
-    return true;
-  });
-}
-
-function populateFilterOptions() {
-  var monthSel = document.getElementById('f-month');
-  var months = Array.from(new Set(ALL_LEADS.map(function (l) { return l.lead_month; })
-    .filter(Boolean))).sort();
-  months.forEach(function (m) {
-    var opt = document.createElement('option');
-    opt.value = m; opt.textContent = m;
-    monthSel.appendChild(opt);
-  });
-
-  var rmSel = document.getElementById('f-rm');
-  META.rm_names.forEach(function (rm) {
-    var opt = document.createElement('option');
-    opt.value = rm; opt.textContent = rm;
-    rmSel.appendChild(opt);
-  });
-
-  var sourceSel = document.getElementById('f-source');
-  META.lead_sources.forEach(function (s) {
-    var opt = document.createElement('option');
-    opt.value = s; opt.textContent = s;
-    sourceSel.appendChild(opt);
-  });
-
-  var connSel = document.getElementById('f-connection');
-  META.connection_types.forEach(function (c) {
-    var opt = document.createElement('option');
-    opt.value = c; opt.textContent = c;
-    connSel.appendChild(opt);
-  });
-}
-
-function clearFilters() {
-  document.getElementById('f-month').value = '';
-  document.getElementById('f-rm').value = '';
-  document.getElementById('f-source').value = '';
-  document.getElementById('f-connection').value = '';
-  document.getElementById('f-date-from').value = '';
-  document.getElementById('f-date-to').value = '';
-  renderAll();
+  return ALL_LEADS;
 }
 
 // =============================================================================
@@ -499,17 +398,21 @@ function renderBySource(leads) {
   var groups = {};
   leads.forEach(function (l) {
     var key = l.lead_source || '(Unknown Source)';
-    groups[key] = groups[key] || { leads: 0, revenue: 0 };
+    groups[key] = groups[key] || { leads: 0, revenue: 0, closedCount: 0 };
     groups[key].leads++;
     groups[key].revenue += (l.revenue || 0);
+    if (l.status_category === 'Closed / Won') groups[key].closedCount++;
   });
   var rows = Object.keys(groups).map(function (k) {
-    return { source: k, leads: groups[k].leads, revenue: groups[k].revenue };
+    return {
+      source: k, leads: groups[k].leads, revenue: groups[k].revenue,
+      closed_count: groups[k].closedCount
+    };
   }).sort(function (a, b) { return b.leads - a.leads; });
 
   var tbody = document.querySelector('#source-table tbody');
   tbody.innerHTML = '';
-  if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="empty-note">No data</td></tr>'; return; }
+  if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="empty-note">No data</td></tr>'; return; }
   var maxLeads = Math.max.apply(null, rows.map(function (r) { return r.leads; }));
   rows.forEach(function (row) {
     var pct = Math.round((row.leads / maxLeads) * 100);
@@ -517,6 +420,8 @@ function renderBySource(leads) {
     tr.innerHTML =
       '<td>' + row.source + '</td>' +
       '<td class="num">' + row.leads + '</td>' +
+      '<td class="num">' + row.closed_count + '</td>' +
+      '<td class="num">' + fmtINR(row.revenue) + '</td>' +
       '<td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div></div></td>';
     tbody.appendChild(tr);
   });
@@ -625,10 +530,17 @@ function renderByRM(leads) {
   var groups = {};
   leads.forEach(function (l) {
     (l.rm_names || []).forEach(function (rm) {
-      groups[rm] = groups[rm] || { total: 0, revenue: 0, closedWon: 0, interested: 0, notInterested: 0 };
+      groups[rm] = groups[rm] || {
+        total: 0, revenue: 0, closedWon: 0, interested: 0, notInterested: 0,
+        closedByConnType: {}
+      };
       groups[rm].total++;
       groups[rm].revenue += (l.revenue || 0);
-      if (l.status_category === 'Closed / Won') groups[rm].closedWon++;
+      if (l.status_category === 'Closed / Won') {
+        groups[rm].closedWon++;
+        var ct = l.connection_type || 'OTHER';
+        groups[rm].closedByConnType[ct] = (groups[rm].closedByConnType[ct] || 0) + 1;
+      }
       if (l.status_category === 'Interested') groups[rm].interested++;
       if (l.status_category === 'Not Interested') groups[rm].notInterested++;
     });
@@ -637,19 +549,25 @@ function renderByRM(leads) {
     var g = groups[rm];
     return {
       rm_name: rm, total_leads: g.total, revenue: g.revenue,
-      closed_won: g.closedWon, interested: g.interested, not_interested: g.notInterested
+      closed_won: g.closedWon, interested: g.interested, not_interested: g.notInterested,
+      closed_by_conn_type: g.closedByConnType
     };
   }).sort(function (a, b) { return b.total_leads - a.total_leads; });
 
   var tbody = document.querySelector('#rm-table tbody');
   tbody.innerHTML = '';
-  if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No data</td></tr>'; return; }
+  if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No data</td></tr>'; return; }
   rows.forEach(function (row) {
+    var connBreakdown = Object.keys(row.closed_by_conn_type)
+      .sort()
+      .map(function (ct) { return ct + ': ' + row.closed_by_conn_type[ct]; })
+      .join(', ') || '&mdash;';
     var tr = document.createElement('tr');
     tr.innerHTML =
       '<td>' + row.rm_name + '</td>' +
       '<td class="num">' + row.total_leads + '</td>' +
       '<td class="num">' + row.closed_won + '</td>' +
+      '<td style="font-size:12px;color:var(--grey)">' + connBreakdown + '</td>' +
       '<td class="num">' + row.interested + '</td>' +
       '<td class="num">' + row.not_interested + '</td>' +
       '<td class="num">' + fmtINR(row.revenue) + '</td>';
@@ -665,7 +583,7 @@ function renderLeadsTable(leads) {
   tbody.innerHTML = '';
   var limited = leads.slice(0, 300);
   if (limited.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" class="empty-note">No leads match the current filters</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="empty-note">No leads found</td></tr>';
     return;
   }
   limited.forEach(function (l) {
@@ -680,7 +598,8 @@ function renderLeadsTable(leads) {
       '<td><span class="status-pill ' + statusClass(l.status_category) + '">' + l.status_category + '</span></td>' +
       '<td class="num">' + (l.price_numeric ? Math.round(l.price_numeric).toLocaleString('en-IN') : '') + '</td>' +
       '<td class="num">' + (l.revenue ? fmtINR(l.revenue) : '') + '</td>' +
-      '<td>' + (l.close_month || '') + '</td>';
+      '<td>' + (l.close_month || '') + '</td>' +
+      '<td>' + (l.rm_remarks || '') + '</td>';
     tbody.appendChild(tr);
   });
 }
@@ -701,22 +620,13 @@ function renderAll() {
 
 async function loadAll() {
   await fetchLeadData();
-  populateFilterOptions();
   renderAll();
 }
 
 async function refreshData() {
   ALL_LEADS = [];
-  document.querySelectorAll('.filter-group select').forEach(function (sel) {
-    // keep first ("All ...") option, drop the rest before repopulating
-    while (sel.options.length > 1) sel.remove(1);
-  });
   await loadAll();
 }
-
-document.querySelectorAll('.filter-group select, .filter-group input').forEach(function (el) {
-  el.addEventListener('change', renderAll);
-});
 
 // =============================================================================
 // INIT — restore session if already logged in this browser tab
