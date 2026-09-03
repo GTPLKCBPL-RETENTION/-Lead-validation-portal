@@ -333,7 +333,7 @@
     <div class="tab-nav">
       <button class="tab-btn active" data-tab="tab-overview" onclick="switchTab('tab-overview')">Overview</button>
       <button class="tab-btn" data-tab="tab-rm" onclick="switchTab('tab-rm')">RM-wise</button>
-      <button class="tab-btn" data-tab="tab-source" onclick="switchTab('tab-source')">Source / Connection</button>
+      <button class="tab-btn" data-tab="tab-source" onclick="switchTab('tab-source')">Lead source-wise breakup</button>
       <button class="tab-btn" data-tab="tab-details" onclick="switchTab('tab-details')">Lead Details</button>
       <button class="tab-btn" data-tab="tab-agent" onclick="switchTab('tab-agent')">Agent Update</button>
       <button class="tab-btn" id="admin-tab-btn" data-tab="tab-admin" onclick="switchTab('tab-admin')" style="display:none;">Admin</button>
@@ -342,9 +342,17 @@
     <div id="tab-overview" class="tab-panel active">
       <div class="panel-grid">
         <div class="panel">
-          <h2>Lead status breakup</h2>
-          <table id="status-table">
-            <thead><tr><th>Status</th><th class="num" style="width:70px;">Leads</th><th style="width:60px;">Share</th></tr></thead>
+          <h2>Lead source-wise breakup</h2>
+          <table id="source-table">
+            <thead><tr><th>Source</th><th class="num">Leads</th><th class="num">Closed count</th><th class="num">Revenue</th><th>Share</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h2>Connection type-wise breakup</h2>
+          <table id="connection-table">
+            <thead><tr><th>Type</th><th class="num">Leads</th><th class="num">Revenue</th><th>Speed / Bandwidth</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -384,17 +392,9 @@
     <div id="tab-source" class="tab-panel">
       <div class="panel-grid">
         <div class="panel">
-          <h2>Lead source-wise breakup</h2>
-          <table id="source-table">
-            <thead><tr><th>Source</th><th class="num">Leads</th><th class="num">Closed count</th><th class="num">Revenue</th><th>Share</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-        <div class="panel">
-          <h2>Connection type-wise breakup</h2>
-          <table id="connection-table">
-            <thead><tr><th>Type</th><th class="num">Leads</th><th class="num">Revenue</th><th>Speed / Bandwidth</th></tr></thead>
+          <h2>Lead status breakup</h2>
+          <table id="status-table">
+            <thead><tr><th>Status</th><th class="num" style="width:70px;">Leads</th><th style="width:60px;">Share</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
