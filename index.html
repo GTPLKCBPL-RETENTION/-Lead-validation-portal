@@ -78,6 +78,52 @@
   }
   .details-filter-bar .clear-btn:hover { border-color: var(--red); color: var(--red); }
 
+  /* ---- Agent Update tab ---- */
+  .agent-search-bar {
+    display: flex; gap: 12px; align-items: flex-end; margin-bottom: 16px;
+  }
+  .agent-search-bar input[type=text] {
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; min-width: 220px;
+  }
+  .primary-btn {
+    background: var(--blue); color: #fff; border: none; padding: 9px 20px;
+    border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; height: 38px;
+  }
+  .primary-btn:hover { background: var(--navy); }
+  .primary-btn:disabled { background: var(--grey); cursor: not-allowed; }
+  .agent-status-msg {
+    padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;
+  }
+  .agent-status-msg.info { background: #eaf0fb; color: var(--blue); }
+  .agent-status-msg.error { background: #fdecea; color: var(--red); }
+  .agent-status-msg.success { background: #e2f3e9; color: var(--teal); }
+
+  .agent-lead-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 18px;
+    margin-bottom: 16px; background: #fafbfc;
+  }
+  .agent-lead-card h3 {
+    font-size: 13px; color: var(--navy); margin: 0 0 12px;
+  }
+  .agent-edit-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: end; margin-bottom: 14px;
+  }
+  @media (max-width: 700px) { .agent-edit-row { grid-template-columns: 1fr; } }
+  .agent-edit-row .filter-group select,
+  .agent-edit-row .filter-group input,
+  .agent-edit-row .filter-group textarea {
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 13px; width: 100%;
+  }
+  .agent-current-value {
+    background: #fff; border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; font-size: 13px; color: var(--grey); min-height: 36px;
+  }
+  .agent-speed-row { display: flex; gap: 8px; }
+  .agent-speed-row input { flex: 1; }
+  .agent-speed-row select { width: 100px; }
+
   /* ---- Main layout ---- */
   main { padding: 24px 28px 60px; max-width: 1400px; margin: 0 auto; }
 
@@ -218,6 +264,7 @@
       <button class="tab-btn" data-tab="tab-rm" onclick="switchTab('tab-rm')">RM-wise</button>
       <button class="tab-btn" data-tab="tab-source" onclick="switchTab('tab-source')">Source / Connection</button>
       <button class="tab-btn" data-tab="tab-details" onclick="switchTab('tab-details')">Lead Details</button>
+      <button class="tab-btn" data-tab="tab-agent" onclick="switchTab('tab-agent')">Agent Update</button>
     </div>
 
     <div id="tab-overview" class="tab-panel active">
@@ -309,6 +356,45 @@
         </div>
       </div>
     </div>
+
+    <div id="tab-agent" class="tab-panel">
+      <div class="panel-grid">
+        <div class="panel full-width">
+          <h2>Add new lead</h2>
+          <p style="font-size:13px;color:var(--grey);margin-top:-6px;margin-bottom:16px;">
+            Enter a new customer's details below. The lead date is captured automatically.
+          </p>
+          <button class="primary-btn" id="add-lead-toggle-btn" onclick="toggleAddLeadForm()">+ Add new lead</button>
+
+          <div id="add-lead-form-wrap" style="display:none; margin-top:16px;">
+            <div id="add-lead-fields"></div>
+            <div style="margin-top:6px;">
+              <button class="primary-btn" onclick="submitNewLead()">Save new lead</button>
+            </div>
+            <div id="add-lead-status" class="agent-status-msg" style="display:none; margin-top:12px;"></div>
+          </div>
+        </div>
+
+        <div class="panel full-width">
+          <h2>Agent update</h2>
+          <p style="font-size:13px;color:var(--grey);margin-top:-6px;margin-bottom:16px;">
+            Search a lead by mobile number, then update any field. Changes save directly to the Google Sheet.
+          </p>
+
+          <div class="agent-search-bar">
+            <div class="filter-group">
+              <label for="agent-mobile-input">Mobile number</label>
+              <input type="text" id="agent-mobile-input" placeholder="e.g. 9876543210" inputmode="numeric">
+            </div>
+            <button class="primary-btn" onclick="agentSearchLead()">Search</button>
+          </div>
+
+          <div id="agent-search-status" class="agent-status-msg" style="display:none;"></div>
+
+          <div id="agent-results"></div>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -318,7 +404,7 @@
 // =============================================================================
 // Paste your Google Apps Script Web App URL here (see Code.gs install steps).
 // Looks like: https://script.google.com/macros/s/XXXXXXXXXXXX/exec
-var API_BASE = "https://script.google.com/macros/s/AKfycbyr2seD_wS8TN2m-I_LkXEI5nfV4qKjsCmvlejWVFFfX-TVTOe37LeNaB-DAeCg-oXqdQ/exec";
+var API_BASE = "https://script.google.com/macros/s/AKfycbzWe94aSVbraeKf_7Okm2EBTgYcFz8wQ40_TOi907HOCtOSkqo4JPFiT_UXQ8emPFt2sw/exec";
 
 // Client-side password gate. NOTE: this is NOT secure — anyone who views
 // the page source can read this value. It only blocks casual/accidental
@@ -778,6 +864,318 @@ async function refreshData() {
 
 document.getElementById('d-filter-rm').addEventListener('change', renderAll);
 document.getElementById('d-filter-status').addEventListener('change', renderAll);
+
+// =============================================================================
+// AGENT UPDATE TAB
+// =============================================================================
+
+// Column list shown in the dropdown — label must exactly match what
+// Code.gs's EDITABLE_COLUMNS sends back as the key in "values".
+var AGENT_EDITABLE_COLUMNS = [
+  { label: "Lead Source", header: "LEAD SOURCE" },
+  { label: "Company Name & Address", header: "Company Name & Address" },
+  { label: "Type of Connection", header: "TYPE OF CONNECTION" },
+  { label: "Speed / Bandwidth", header: "Speed / Bandwidth" },
+  { label: "Price (Rs.)", header: "Price (Rs.)" },
+  { label: "Contact Person Name", header: "Contact Person name" },
+  { label: "Mobile No", header: "Mobile No" },
+  { label: "Pin Code", header: "Pin Code" },
+  { label: "Caller Name", header: "Caller Name" },
+  { label: "Remarks", header: "REMARKS" },
+  { label: "RM Name", header: "RM NAME" },
+  { label: "RM Remarks", header: "RM Remarks" },
+  { label: "RM Follow Up Date", header: "RM Follow Up Date" },
+  { label: "Lead Close Month", header: "LEAD CLOSE MONTH" },
+  { label: "Lead Status", header: "LEAD STATUS" },
+  { label: "Agent Final Remarks", header: "AGENT FINAL REMARKS" }
+];
+
+function agentShowStatus(message, type) {
+  var el = document.getElementById('agent-search-status');
+  el.textContent = message;
+  el.className = 'agent-status-msg ' + type;
+  el.style.display = 'block';
+}
+function agentHideStatus() {
+  document.getElementById('agent-search-status').style.display = 'none';
+}
+
+// text/plain avoids the CORS preflight that Apps Script can't answer —
+// see Code.gs's doPost comment for why this matters.
+async function agentPostToScript(payload) {
+  var res = await fetch(API_BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+async function agentSearchLead() {
+  var mobile = document.getElementById('agent-mobile-input').value.trim();
+  document.getElementById('agent-results').innerHTML = '';
+  agentHideStatus();
+
+  if (!mobile) {
+    agentShowStatus('Enter a mobile number to search.', 'error');
+    return;
+  }
+
+  agentShowStatus('Searching\u2026', 'info');
+  try {
+    var data = await agentPostToScript({ mobile: mobile });
+    if (!data.success) {
+      agentShowStatus(data.error || 'Search failed.', 'error');
+      return;
+    }
+    if (!data.matches || data.matches.length === 0) {
+      agentShowStatus('No lead found with that mobile number.', 'error');
+      return;
+    }
+    agentHideStatus();
+    renderAgentResults(data.matches);
+  } catch (err) {
+    agentShowStatus('Could not reach the server. Please try again.', 'error');
+    console.error(err);
+  }
+}
+
+function renderAgentResults(matches) {
+  var container = document.getElementById('agent-results');
+  container.innerHTML = '';
+
+  matches.forEach(function (match, idx) {
+    var cardId = 'agent-card-' + idx;
+    var card = document.createElement('div');
+    card.className = 'agent-lead-card';
+    card.id = cardId;
+
+    var contactName = match.values['Contact Person name'] || '(no name)';
+    var mobileVal = match.values['Mobile No'] || '';
+
+    card.innerHTML =
+      '<h3>' + contactName + ' &mdash; ' + mobileVal + ' (Sheet row ' + match.sheet_row_number + ')</h3>' +
+      '<div class="agent-edit-row">' +
+        '<div class="filter-group">' +
+          '<label>Field to update</label>' +
+          '<select class="agent-field-select" onchange="agentFieldChanged(\'' + cardId + '\')">' +
+            '<option value="">Choose a field&hellip;</option>' +
+            AGENT_EDITABLE_COLUMNS.map(function (col) {
+              return '<option value="' + col.header + '">' + col.label + '</option>';
+            }).join('') +
+          '</select>' +
+        '</div>' +
+        '<div class="filter-group">' +
+          '<label>Current value</label>' +
+          '<div class="agent-current-value" data-role="current-value">&mdash;</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="agent-edit-row" data-role="new-value-row" style="display:none;">' +
+        '<div class="filter-group" data-role="new-value-container"></div>' +
+        '<div class="filter-group" style="justify-content:end;">' +
+          '<button class="primary-btn" onclick="agentSubmitUpdate(\'' + cardId + '\', ' + match.sheet_row_number + ')">Update</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="agent-status-msg" data-role="card-status" style="display:none;"></div>';
+
+    card._matchValues = match.values;
+    container.appendChild(card);
+  });
+}
+
+function agentFieldChanged(cardId) {
+  var card = document.getElementById(cardId);
+  var select = card.querySelector('.agent-field-select');
+  var header = select.value;
+  var currentValueEl = card.querySelector('[data-role="current-value"]');
+  var newValueRow = card.querySelector('[data-role="new-value-row"]');
+  var newValueContainer = card.querySelector('[data-role="new-value-container"]');
+
+  if (!header) {
+    currentValueEl.textContent = '\u2014';
+    newValueRow.style.display = 'none';
+    return;
+  }
+
+  var currentVal = card._matchValues[header];
+  currentValueEl.textContent = (currentVal === null || currentVal === undefined || currentVal === '') ? '(blank)' : currentVal;
+  newValueRow.style.display = 'grid';
+
+  if (header === 'Speed / Bandwidth') {
+    newValueContainer.innerHTML =
+      '<label>New value</label>' +
+      '<div class="agent-speed-row">' +
+        '<input type="number" step="any" data-role="speed-number" placeholder="e.g. 100">' +
+        '<select data-role="speed-unit">' +
+          '<option value="Mbps">Mbps</option>' +
+          '<option value="Gbps">Gbps</option>' +
+          '<option value="Kbps">Kbps</option>' +
+        '</select>' +
+      '</div>';
+  } else if (header === 'RM Remarks' || header === 'Remarks' || header === 'Agent Final Remarks') {
+    newValueContainer.innerHTML =
+      '<label>New value</label>' +
+      '<textarea data-role="new-value" rows="2"></textarea>';
+  } else {
+    newValueContainer.innerHTML =
+      '<label>New value</label>' +
+      '<input type="text" data-role="new-value">';
+  }
+}
+
+async function agentSubmitUpdate(cardId, sheetRowNumber) {
+  var card = document.getElementById(cardId);
+  var select = card.querySelector('.agent-field-select');
+  var header = select.value;
+  var statusEl = card.querySelector('[data-role="card-status"]');
+
+  if (!header) {
+    statusEl.className = 'agent-status-msg error';
+    statusEl.textContent = 'Choose a field first.';
+    statusEl.style.display = 'block';
+    return;
+  }
+
+  var newValue;
+  if (header === 'Speed / Bandwidth') {
+    var num = card.querySelector('[data-role="speed-number"]').value.trim();
+    var unit = card.querySelector('[data-role="speed-unit"]').value;
+    if (!num) {
+      statusEl.className = 'agent-status-msg error';
+      statusEl.textContent = 'Enter a speed value.';
+      statusEl.style.display = 'block';
+      return;
+    }
+    newValue = num + ' ' + unit;
+  } else {
+    newValue = card.querySelector('[data-role="new-value"]').value.trim();
+  }
+
+  var mobile = document.getElementById('agent-mobile-input').value.trim();
+
+  statusEl.className = 'agent-status-msg info';
+  statusEl.textContent = 'Saving\u2026';
+  statusEl.style.display = 'block';
+
+  try {
+    var data = await agentPostToScript({ mobile: mobile, column: header, value: newValue });
+    if (data.success) {
+      statusEl.className = 'agent-status-msg success';
+      statusEl.textContent = 'Saved to the Google Sheet.';
+      card._matchValues[header] = newValue;
+      card.querySelector('[data-role="current-value"]').textContent = newValue;
+    } else {
+      statusEl.className = 'agent-status-msg error';
+      statusEl.textContent = data.error || 'Update failed.';
+    }
+  } catch (err) {
+    statusEl.className = 'agent-status-msg error';
+    statusEl.textContent = 'Could not reach the server. Please try again.';
+    console.error(err);
+  }
+}
+
+// =============================================================================
+// ADD NEW LEAD
+// =============================================================================
+var ADD_LEAD_FORM_VISIBLE = false;
+
+function toggleAddLeadForm() {
+  ADD_LEAD_FORM_VISIBLE = !ADD_LEAD_FORM_VISIBLE;
+  var wrap = document.getElementById('add-lead-form-wrap');
+  var btn = document.getElementById('add-lead-toggle-btn');
+  if (ADD_LEAD_FORM_VISIBLE) {
+    wrap.style.display = 'block';
+    btn.textContent = '\u2212 Hide form';
+    renderAddLeadFields();
+  } else {
+    wrap.style.display = 'none';
+    btn.textContent = '+ Add new lead';
+  }
+}
+
+function renderAddLeadFields() {
+  var container = document.getElementById('add-lead-fields');
+  container.innerHTML = AGENT_EDITABLE_COLUMNS.map(function (col) {
+    var fieldId = 'new-lead-field-' + col.header.replace(/[^a-zA-Z0-9]/g, '-');
+
+    if (col.header === 'Speed / Bandwidth') {
+      return (
+        '<div class="agent-edit-row" style="grid-template-columns:1fr;">' +
+          '<div class="filter-group">' +
+            '<label>' + col.label + '</label>' +
+            '<div class="agent-speed-row">' +
+              '<input type="number" step="any" id="' + fieldId + '-number" placeholder="e.g. 100">' +
+              '<select id="' + fieldId + '-unit">' +
+                '<option value="Mbps">Mbps</option>' +
+                '<option value="Gbps">Gbps</option>' +
+                '<option value="Kbps">Kbps</option>' +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    var isTextarea = (col.header === 'RM Remarks' || col.header === 'REMARKS' || col.header === 'AGENT FINAL REMARKS' || col.header === 'Company Name & Address');
+    var inputHtml = isTextarea
+      ? '<textarea id="' + fieldId + '" rows="2"></textarea>'
+      : '<input type="text" id="' + fieldId + '">';
+
+    return (
+      '<div class="agent-edit-row" style="grid-template-columns:1fr;">' +
+        '<div class="filter-group">' +
+          '<label>' + col.label + '</label>' +
+          inputHtml +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+async function submitNewLead() {
+  var statusEl = document.getElementById('add-lead-status');
+  var fields = {};
+
+  AGENT_EDITABLE_COLUMNS.forEach(function (col) {
+    var fieldId = 'new-lead-field-' + col.header.replace(/[^a-zA-Z0-9]/g, '-');
+    if (col.header === 'Speed / Bandwidth') {
+      var num = document.getElementById(fieldId + '-number').value.trim();
+      var unit = document.getElementById(fieldId + '-unit').value;
+      if (num) fields[col.header] = num + ' ' + unit;
+    } else {
+      var val = document.getElementById(fieldId).value.trim();
+      if (val) fields[col.header] = val;
+    }
+  });
+
+  if (!fields['Mobile No']) {
+    statusEl.className = 'agent-status-msg error';
+    statusEl.textContent = 'Mobile No is required.';
+    statusEl.style.display = 'block';
+    return;
+  }
+
+  statusEl.className = 'agent-status-msg info';
+  statusEl.textContent = 'Saving\u2026';
+  statusEl.style.display = 'block';
+
+  try {
+    var data = await agentPostToScript({ action: 'add_lead', fields: fields });
+    if (data.success) {
+      statusEl.className = 'agent-status-msg success';
+      statusEl.textContent = 'New lead saved (Sheet row ' + data.new_row_number + '). The lead date was set automatically.';
+      renderAddLeadFields(); // clear the form
+    } else {
+      statusEl.className = 'agent-status-msg error';
+      statusEl.textContent = data.error || 'Could not save the lead.';
+    }
+  } catch (err) {
+    statusEl.className = 'agent-status-msg error';
+    statusEl.textContent = 'Could not reach the server. Please try again.';
+    console.error(err);
+  }
+}
 
 // =============================================================================
 // INIT — restore session if already logged in this browser tab
