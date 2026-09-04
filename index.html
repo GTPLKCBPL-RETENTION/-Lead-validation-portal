@@ -966,7 +966,7 @@ function renderLeadsTable(leads) {
 
   var visibleLeads = leads.filter(function (l) {
     if (rmFilter && (l.rm_names || []).indexOf(rmFilter) === -1) return false;
-    if (statusFilter && l.status_raw !== statusFilter) return false;
+    if (statusFilter && String(l.status_raw || '').trim().toLowerCase() !== statusFilter.trim().toLowerCase()) return false;
     return true;
   });
 
@@ -1007,9 +1007,22 @@ function populateDetailsFilterOptions() {
 
   var statusSel = document.getElementById('d-filter-status');
   while (statusSel.options.length > 1) statusSel.remove(1);
-  var rawStatuses = Array.from(new Set(
-    ALL_LEADS.map(function (l) { return l.status_raw; }).filter(Boolean)
-  )).sort();
+  // Dedupe case-insensitively — the sheet sometimes has the same status
+  // typed with different casing (e.g. "Feedback Pending from Sales."
+  // vs "Feedback pending from Sales."), which would otherwise show up
+  // as two separate dropdown options for what's really one status.
+  var seenLower = {};
+  var rawStatuses = [];
+  ALL_LEADS.forEach(function (l) {
+    var s = l.status_raw;
+    if (!s) return;
+    var key = s.trim().toLowerCase();
+    if (!seenLower[key]) {
+      seenLower[key] = true;
+      rawStatuses.push(s);
+    }
+  });
+  rawStatuses.sort();
   rawStatuses.forEach(function (s) {
     var opt = document.createElement('option');
     opt.value = s; opt.textContent = s;
