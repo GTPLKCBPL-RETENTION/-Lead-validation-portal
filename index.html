@@ -565,6 +565,7 @@ document.getElementById('login-form').addEventListener('submit', function (e) {
 });
 
 function logout() {
+  stopAutoRefresh();
   sessionStorage.removeItem('sc_logged_in');
   sessionStorage.removeItem('sc_is_admin');
   document.getElementById('dashboard-screen').style.display = 'none';
@@ -593,6 +594,40 @@ function showDashboard() {
   }
 
   loadAll();
+  startAutoRefresh();
+}
+
+// =============================================================================
+// AUTO-REFRESH — silently reloads lead data + dropdown config every 30
+// seconds, so changes made elsewhere (Sheet edits, Admin dropdown saves)
+// show up without the user needing to click "Refresh data".
+// =============================================================================
+var AUTO_REFRESH_INTERVAL_MS = 30000;
+var autoRefreshTimer = null;
+var autoRefreshInFlight = false;
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) return; // already running
+  autoRefreshTimer = setInterval(async function () {
+    if (autoRefreshInFlight) return; // skip if the previous refresh hasn't finished
+    autoRefreshInFlight = true;
+    try {
+      await loadLeadDataOnly();
+      var statusEl = document.getElementById('refresh-status');
+      if (statusEl) statusEl.textContent = 'Auto-refreshed: ' + new Date().toLocaleTimeString();
+    } catch (err) {
+      console.error('Auto-refresh failed:', err);
+    } finally {
+      autoRefreshInFlight = false;
+    }
+  }, AUTO_REFRESH_INTERVAL_MS);
+}
+
+function stopAutoRefresh() {
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer);
+    autoRefreshTimer = null;
+  }
 }
 
 // =============================================================================
@@ -1062,7 +1097,37 @@ function renderAll() {
   renderLeadsTable(filtered);
 }
 
+// Fetches the saved dropdown config and applies it to the live forms
+// (Add New Lead / Agent Update) — runs for every user, regardless of
+// whether they can see the Admin tab, so everyone's dropdowns reflect
+// whatever the admin has configured.
+async function loadAndApplyDropdownConfigForAllUsers() {
+  try {
+    var data = await agentPostToScript({ action: 'get_dropdown_config' });
+    if (data.success) {
+      ADMIN_DROPDOWN_CONFIG = data.config;
+      applyAdminDropdownToForms();
+    }
+  } catch (err) {
+    // Non-fatal — forms just keep their built-in default options.
+    console.error('Could not load dropdown config:', err);
+  }
+}
+
+// Full load — fetches lead data AND dropdown config. Used at initial
+// page load (and the manual "Refresh data" button), so a brand-new
+// session always has the current dropdown lists.
 async function loadAll() {
+  await fetchLeadData();
+  await loadAndApplyDropdownConfigForAllUsers();
+  populateDetailsFilterOptions();
+  renderAll();
+}
+
+// Lightweight reload — lead data only, no dropdown-config fetch. Used
+// by the 30-second auto-refresh, since dropdown options rarely change
+// and re-fetching them on every tick just adds unnecessary load time.
+async function loadLeadDataOnly() {
   await fetchLeadData();
   populateDetailsFilterOptions();
   renderAll();
