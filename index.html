@@ -106,6 +106,12 @@
   .agent-lead-card h3 {
     font-size: 13px; color: var(--navy); margin: 0 0 12px;
   }
+  .agent-full-details {
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 4px;
+  }
+  .agent-full-details table td { padding: 5px 0; border-bottom: 1px solid #f0f2f5; }
+  .agent-full-details table tr:last-child td { border-bottom: none; }
   .agent-edit-row {
     display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: end; margin-bottom: 14px;
   }
@@ -480,7 +486,7 @@
 // =============================================================================
 // Paste your Google Apps Script Web App URL here (see Code.gs install steps).
 // Looks like: https://script.google.com/macros/s/XXXXXXXXXXXX/exec
-var API_BASE = "https://script.google.com/macros/s/AKfycbycIQ5sAAUr_7b1yXNH_JXr0g-uzf60Cfki8mz1wE7rAzNOoJFirTeyihyURXD8Yq44uA/exec";
+var API_BASE = "https://script.google.com/macros/s/AKfycby9cqHiiB8o8vE_AoQpb_yh7JQSXKD8LrXhVdXgWU1NLdmDmofRwKm23GuTova_MIXjMw/exec";
 
 // Client-side password gate. NOTE: this is NOT secure — anyone who views
 // the page source can read this value. It only blocks casual/accidental
@@ -1090,12 +1096,13 @@ var AGENT_EDITABLE_COLUMNS = [
   { label: "Speed / Bandwidth", header: "Speed / Bandwidth", type: "speed", defaultZero: true },
   { label: "Price (Rs.)", header: "Price (Rs.)", type: "number", defaultZero: true, skipOnAdd: true },
   { label: "Contact Person Name", header: "Contact Person name", type: "text" },
+  { label: "Contact Person Designation", header: "Contact Person Designation", type: "text" },
   { label: "Mobile No", header: "Mobile No", type: "mobile", required: true },
   { label: "Pin Code", header: "Pin Code", type: "text" },
   { label: "Caller Name", header: "Caller Name", type: "select", required: true,
     options: ["Moumita Roy"] },
   { label: "Remarks", header: "REMARKS", type: "textarea" },
-  { label: "RM Name", header: "RM NAME", type: "select",
+  { label: "RM Name", header: "RM NAME", type: "select", required: true,
     options: ["Nikhil Jha", "Umakant Thakur", "Ashok Pandey", "Pritam Das", "Sudip Bose",
               "Tapas Dandapat", "Tathagata Samasddar", "Moumita Roy", "Partha Ghosh", "Navid Anjum"] },
   { label: "RM Remarks", header: "RM Remarks", type: "textarea", skipOnAdd: true },
@@ -1240,9 +1247,19 @@ function renderAgentResults(matches) {
     var contactName = match.values['Contact Person name'] || '(no name)';
     var mobileVal = match.values['Mobile No'] || '';
 
+    // Full lead details summary — every editable column, in order.
+    var summaryRows = AGENT_EDITABLE_COLUMNS.map(function (col) {
+      var val = match.values[col.header];
+      var display = (val === null || val === undefined || val === '') ? '&mdash;' : val;
+      return '<tr><td style="font-weight:600;color:var(--grey);white-space:nowrap;padding-right:16px;">' + col.label + '</td><td>' + display + '</td></tr>';
+    }).join('');
+
     card.innerHTML =
       '<h3>' + contactName + ' &mdash; ' + mobileVal + ' (Sheet row ' + match.sheet_row_number + ')</h3>' +
-      '<div class="agent-edit-row">' +
+      '<div class="agent-full-details">' +
+        '<table style="width:100%; font-size:13px; border-collapse:collapse;">' + summaryRows + '</table>' +
+      '</div>' +
+      '<div class="agent-edit-row" style="margin-top:16px;">' +
         '<div class="filter-group">' +
           '<label>Field to update</label>' +
           '<select class="agent-field-select" onchange="agentFieldChanged(\'' + cardId + '\')">' +
