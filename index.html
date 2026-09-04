@@ -328,6 +328,11 @@
         <div class="value" id="kpi-closed-won">&mdash;</div>
         <div class="kpi-breakdown" id="kpi-closed-won-breakdown"></div>
       </div>
+      <div class="kpi-card">
+        <div class="label">Lead Funnel (Feedback pending)</div>
+        <div class="value" id="kpi-feedback-pending">&mdash;</div>
+        <div class="kpi-breakdown" id="kpi-feedback-pending-breakdown"></div>
+      </div>
       <div class="kpi-card revenue">
         <div class="label">Total revenue generated</div>
         <div class="value" id="kpi-total-revenue">&mdash;</div>
@@ -505,6 +510,16 @@ var CATEGORY_ORDER = [
   "Duplicate", "Uncategorized"
 ];
 
+// The three raw LEAD STATUS values that count as "feedback pending" /
+// "lead funnel" (in progress, not yet closed and not yet lost), with
+// short display labels for the breakdown. Shared by the KPI card and
+// the RM-wise table.
+var FEEDBACK_PENDING_STATUSES = [
+  { raw: "Feedback Pending from Sales.", label: "Feedback Pending" },
+  { raw: "Under Discussion with Sales", label: "Under Discussion" },
+  { raw: "Hold from Customer End", label: "Hold" }
+];
+
 // =============================================================================
 // TABS
 // =============================================================================
@@ -643,8 +658,19 @@ function renderSummary(leads) {
   var closedWon = closedLeads.length;
   var totalRevenue = leads.reduce(function (sum, l) { return sum + (l.revenue || 0); }, 0);
 
+  // Lead Funnel = leads still "in progress" (feedback pending / under
+  // discussion / hold) — i.e. not yet closed, not yet lost. Counted once
+  // per lead (unlike the RM-wise table, where a 2-RM lead counts twice).
+  var feedbackPendingLeads = leads.filter(function (l) {
+    return FEEDBACK_PENDING_STATUSES.some(function (p) {
+      return p.raw.trim().toLowerCase() === String(l.status_raw || '').trim().toLowerCase();
+    });
+  });
+  var feedbackPendingTotal = feedbackPendingLeads.length;
+
   document.getElementById('kpi-total-leads').textContent = totalLeads.toLocaleString('en-IN');
   document.getElementById('kpi-closed-won').textContent = closedWon.toLocaleString('en-IN');
+  document.getElementById('kpi-feedback-pending').textContent = feedbackPendingTotal.toLocaleString('en-IN');
   document.getElementById('kpi-total-revenue').innerHTML = fmtINR(totalRevenue);
 
   // --- Mini connection-type breakdowns under each KPI card ---
@@ -677,6 +703,19 @@ function renderSummary(leads) {
     renderBreakdownHTML(connTypeCounts(leads), false);
   document.getElementById('kpi-closed-won-breakdown').innerHTML =
     renderBreakdownHTML(connTypeCounts(closedLeads), false);
+
+  // --- Lead Funnel breakdown: by status (Feedback Pending / Under Discussion / Hold) ---
+  var pendingByStatus = {};
+  feedbackPendingLeads.forEach(function (l) {
+    var match = FEEDBACK_PENDING_STATUSES.filter(function (p) {
+      return p.raw.trim().toLowerCase() === String(l.status_raw || '').trim().toLowerCase();
+    })[0];
+    var label = match ? match.label : 'Other';
+    pendingByStatus[label] = (pendingByStatus[label] || 0) + 1;
+  });
+  document.getElementById('kpi-feedback-pending-breakdown').innerHTML =
+    renderBreakdownHTML(pendingByStatus, false);
+
   document.getElementById('kpi-total-revenue-breakdown').innerHTML =
     renderBreakdownHTML(connTypeRevenue(closedLeads), true);
 }
@@ -892,14 +931,6 @@ function renderByMonth(leads) {
 // RENDER: RM-WISE BREAKUP (a lead with 2 RMs counts once per RM)
 // =============================================================================
 function renderByRM(leads) {
-  // The three raw LEAD STATUS values that count as "feedback pending",
-  // with short display labels for the breakdown.
-  var FEEDBACK_PENDING_STATUSES = [
-    { raw: "Feedback Pending from Sales.", label: "Feedback Pending" },
-    { raw: "Under Discussion with Sales", label: "Under Discussion" },
-    { raw: "Hold from Customer End", label: "Hold" }
-  ];
-
   var groups = {};
   leads.forEach(function (l) {
     (l.rm_names || []).forEach(function (rm) {
