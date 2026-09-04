@@ -542,7 +542,7 @@ function showDashboard() {
 // seconds, so changes made elsewhere (Sheet edits, Admin dropdown saves)
 // show up without the user needing to click "Refresh data".
 // =============================================================================
-var AUTO_REFRESH_INTERVAL_MS = 30000;
+var AUTO_REFRESH_INTERVAL_MS = 300000; // 5 minutes
 var autoRefreshTimer = null;
 var autoRefreshInFlight = false;
 
@@ -1113,7 +1113,8 @@ var AGENT_EDITABLE_COLUMNS = [
               "Invalid / Incorrect Mobile Number", "Call disconnected / No Response; 3 retries failed.",
               "Out of Service Area (Outside West Bengal)", "Out of Service Area in West Bengal",
               "Duplicate Entry", "Under Discussion with Sales", "ISP/P2P Lead",
-              "General Inquiry for Charges", "Feedback Pending from Sales.", "Hold from Customer End"] },
+              "General Inquiry for Charges", "Feedback Pending from Sales.", "Hold from Customer End",
+              "Not Interested / Not Required – Feedback Shared by RM"] },
   { label: "Agent Final Remarks", header: "AGENT FINAL REMARKS", type: "textarea", skipOnAdd: true }
 ];
 
