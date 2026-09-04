@@ -336,7 +336,6 @@
       <button class="tab-btn" data-tab="tab-source" onclick="switchTab('tab-source')">Lead Status & Month-wise Trend</button>
       <button class="tab-btn" data-tab="tab-details" onclick="switchTab('tab-details')">Lead Details</button>
       <button class="tab-btn" data-tab="tab-agent" onclick="switchTab('tab-agent')">Agent Update</button>
-      <button class="tab-btn" id="admin-tab-btn" data-tab="tab-admin" onclick="switchTab('tab-admin')" style="display:none;">Admin</button>
     </div>
 
     <div id="tab-overview" class="tab-panel active">
@@ -472,34 +471,6 @@
       </div>
     </div>
 
-    <div id="tab-admin" class="tab-panel">
-      <div class="panel-grid">
-        <div class="panel full-width">
-          <h2>Dropdown lists</h2>
-          <p style="font-size:13px;color:var(--grey);margin-top:-6px;margin-bottom:16px;">
-            Add or remove the options shown in the Lead Source, Type of Connection, Caller Name,
-            RM Name, and Lead Status dropdowns across the whole dashboard.
-          </p>
-          <div id="admin-dropdown-lists"></div>
-        </div>
-
-        <div class="panel full-width">
-          <h2>Allowed emails</h2>
-          <p style="font-size:13px;color:var(--grey);margin-top:-6px;margin-bottom:16px;">
-            Only these email addresses can open this dashboard.
-          </p>
-          <div id="admin-emails-list"></div>
-          <div class="agent-search-bar" style="margin-top:14px;">
-            <div class="filter-group">
-              <label for="admin-new-email">Add an email</label>
-              <input type="email" id="admin-new-email" placeholder="name@example.com">
-            </div>
-            <button class="primary-btn" onclick="adminAddEmail()">Add</button>
-          </div>
-          <div id="admin-emails-status" class="agent-status-msg" style="display:none; margin-top:12px;"></div>
-        </div>
-      </div>
-    </div>
   </main>
 </div>
 
@@ -512,17 +483,15 @@
 var API_BASE = "https://script.google.com/macros/s/AKfycbycIQ5sAAUr_7b1yXNH_JXr0g-uzf60Cfki8mz1wE7rAzNOoJFirTeyihyURXD8Yq44uA/exec";
 
 // Client-side password gate. NOTE: this is NOT secure — anyone who views
-// the page source can read these values. It only blocks casual/accidental
+// the page source can read this value. It only blocks casual/accidental
 // access. Do not put this URL in front of data that truly must stay private.
-var GENERAL_PASSWORD = "GTPLKCBPL";
-var ADMIN_PASSWORD = "admin2026"; // logging in with this password also unlocks the Admin tab
+var DASHBOARD_PASSWORD = "GTPLKCBPL";
 
 // =============================================================================
 // STATE
 // =============================================================================
 var ALL_LEADS = [];
 var META = { rm_names: [], lead_sources: [], connection_types: [], status_categories: [] };
-var IS_ADMIN_SESSION = false; // set true when login used ADMIN_PASSWORD
 
 var CATEGORY_ORDER = [
   "Closed / Won", "Interested", "Not Interested", "No Response",
@@ -534,9 +503,6 @@ var CATEGORY_ORDER = [
 // TABS
 // =============================================================================
 function switchTab(tabId) {
-  if (tabId === 'tab-admin' && !IS_ADMIN_SESSION) {
-    tabId = 'tab-overview'; // not the admin — redirect quietly
-  }
   document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
   document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
   document.getElementById(tabId).classList.add('active');
@@ -544,20 +510,13 @@ function switchTab(tabId) {
 }
 
 // =============================================================================
-// LOGIN — one password field, two possible passwords. The General password
-// grants normal access; the Admin password grants normal access plus the
-// Admin tab.
+// LOGIN — single shared password.
 // =============================================================================
 document.getElementById('login-form').addEventListener('submit', function (e) {
   e.preventDefault();
   var pwd = document.getElementById('password').value;
-  if (pwd === ADMIN_PASSWORD) {
+  if (pwd === DASHBOARD_PASSWORD) {
     sessionStorage.setItem('sc_logged_in', '1');
-    sessionStorage.setItem('sc_is_admin', '1');
-    showDashboard();
-  } else if (pwd === GENERAL_PASSWORD) {
-    sessionStorage.setItem('sc_logged_in', '1');
-    sessionStorage.setItem('sc_is_admin', '0');
     showDashboard();
   } else {
     document.getElementById('login-error').style.display = 'block';
@@ -567,32 +526,13 @@ document.getElementById('login-form').addEventListener('submit', function (e) {
 function logout() {
   stopAutoRefresh();
   sessionStorage.removeItem('sc_logged_in');
-  sessionStorage.removeItem('sc_is_admin');
   document.getElementById('dashboard-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
-}
-
-function isCurrentUserAdmin_() {
-  return IS_ADMIN_SESSION;
 }
 
 function showDashboard() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'block';
-
-  IS_ADMIN_SESSION = sessionStorage.getItem('sc_is_admin') === '1';
-  var adminBtn = document.getElementById('admin-tab-btn');
-  if (IS_ADMIN_SESSION) {
-    adminBtn.style.display = '';
-  } else {
-    adminBtn.style.display = 'none';
-    // If somehow the Admin tab was left active (e.g. restored session),
-    // fall back to Overview so a non-admin never lands on a hidden tab.
-    if (adminBtn.classList.contains('active')) {
-      switchTab('tab-overview');
-    }
-  }
-
   loadAll();
   startAutoRefresh();
 }
@@ -1097,29 +1037,10 @@ function renderAll() {
   renderLeadsTable(filtered);
 }
 
-// Fetches the saved dropdown config and applies it to the live forms
-// (Add New Lead / Agent Update) — runs for every user, regardless of
-// whether they can see the Admin tab, so everyone's dropdowns reflect
-// whatever the admin has configured.
-async function loadAndApplyDropdownConfigForAllUsers() {
-  try {
-    var data = await agentPostToScript({ action: 'get_dropdown_config' });
-    if (data.success) {
-      ADMIN_DROPDOWN_CONFIG = data.config;
-      applyAdminDropdownToForms();
-    }
-  } catch (err) {
-    // Non-fatal — forms just keep their built-in default options.
-    console.error('Could not load dropdown config:', err);
-  }
-}
-
-// Full load — fetches lead data AND dropdown config. Used at initial
-// page load (and the manual "Refresh data" button), so a brand-new
-// session always has the current dropdown lists.
+// Full load — fetches lead data. Dropdown options are hardcoded in
+// AGENT_EDITABLE_COLUMNS below and no longer fetched from the sheet.
 async function loadAll() {
   await fetchLeadData();
-  await loadAndApplyDropdownConfigForAllUsers();
   populateDetailsFilterOptions();
   renderAll();
 }
@@ -1163,7 +1084,7 @@ var AGENT_EDITABLE_COLUMNS = [
   { label: "Remarks", header: "REMARKS", type: "textarea" },
   { label: "RM Name", header: "RM NAME", type: "select",
     options: ["Nikhil Jha", "Umakant Thakur", "Ashok Pandey", "Pritam Das", "Sudip Bose",
-              "Tapas Dandapat", "Tathagata Samasddar", "Moumita Roy", "Partha Ghosh"] },
+              "Tapas Dandapat", "Tathagata Samasddar", "Moumita Roy", "Partha Ghosh", "Navid Anjum"] },
   { label: "RM Remarks", header: "RM Remarks", type: "textarea", skipOnAdd: true },
   { label: "RM Follow Up Date", header: "RM Follow Up Date", type: "date", skipOnAdd: true },
   { label: "Lead Close Month", header: "LEAD CLOSE MONTH", type: "select", skipOnAdd: true,
@@ -1671,217 +1592,6 @@ function showDuplicateMobileModal(onContinue) {
     onContinue();
   });
 }
-
-// =============================================================================
-// ADMIN TAB — dropdown lists + allowed emails
-// =============================================================================
-var ADMIN_DROPDOWN_CONFIG = null; // { "Lead Source": [...], "Type of Connection": [...], ... }
-
-async function loadAdminDropdownConfig() {
-  if (!isCurrentUserAdmin_()) return;
-  var container = document.getElementById('admin-dropdown-lists');
-  container.innerHTML = '<p style="color:var(--grey);font-size:13px;">Loading&hellip;</p>';
-  try {
-    var data = await agentPostToScript({ action: 'get_dropdown_config' });
-    if (!data.success) {
-      container.innerHTML = '<p style="color:var(--red);font-size:13px;">' + (data.error || 'Could not load dropdown lists.') + '</p>';
-      return;
-    }
-    ADMIN_DROPDOWN_CONFIG = data.config;
-    renderAdminDropdownLists();
-  } catch (err) {
-    container.innerHTML = '<p style="color:var(--red);font-size:13px;">Could not reach the server.</p>';
-    console.error(err);
-  }
-}
-
-function renderAdminDropdownLists() {
-  var container = document.getElementById('admin-dropdown-lists');
-  var columns = Object.keys(ADMIN_DROPDOWN_CONFIG);
-  container.innerHTML = columns.map(function (colName) {
-    var blockId = 'admin-block-' + colName.replace(/[^a-zA-Z0-9]/g, '-');
-    var options = ADMIN_DROPDOWN_CONFIG[colName];
-    return (
-      '<div class="admin-dropdown-block" id="' + blockId + '" data-column="' + colName + '">' +
-        '<h4>' + colName + '</h4>' +
-        '<div data-role="options-list">' +
-          options.map(function (opt, idx) { return adminOptionRowHtml(opt, idx); }).join('') +
-        '</div>' +
-        '<button class="admin-add-row-btn" onclick="adminAddOptionRow(\'' + blockId + '\')">+ Add option</button>' +
-        '<br>' +
-        '<button class="admin-save-btn" onclick="adminSaveDropdown(\'' + blockId + '\', \'' + colName + '\')">Save changes</button>' +
-        '<div class="agent-status-msg" data-role="block-status" style="display:none; margin-top:10px;"></div>' +
-      '</div>'
-    );
-  }).join('');
-}
-
-function adminOptionRowHtml(value, idx) {
-  return (
-    '<div class="admin-option-row">' +
-      '<input type="text" value="' + String(value).replace(/"/g, '&quot;') + '">' +
-      '<button class="admin-remove-btn" onclick="this.parentElement.remove()">&times;</button>' +
-    '</div>'
-  );
-}
-
-function adminAddOptionRow(blockId) {
-  var list = document.querySelector('#' + blockId + ' [data-role="options-list"]');
-  var row = document.createElement('div');
-  row.className = 'admin-option-row';
-  row.innerHTML =
-    '<input type="text" value="" placeholder="New option">' +
-    '<button class="admin-remove-btn" onclick="this.parentElement.remove()">&times;</button>';
-  list.appendChild(row);
-  row.querySelector('input').focus();
-}
-
-async function adminSaveDropdown(blockId, colName) {
-  if (!isCurrentUserAdmin_()) return;
-  var block = document.getElementById(blockId);
-  var statusEl = block.querySelector('[data-role="block-status"]');
-  var inputs = block.querySelectorAll('[data-role="options-list"] input[type=text]');
-  var values = Array.prototype.map.call(inputs, function (inp) { return inp.value.trim(); })
-    .filter(function (v) { return v.length > 0; });
-
-  statusEl.className = 'agent-status-msg info';
-  statusEl.textContent = 'Saving\u2026';
-  statusEl.style.display = 'block';
-
-  try {
-    var data = await agentPostToScript({ action: 'update_dropdown_config', column: colName, values: values });
-    if (data.success) {
-      statusEl.className = 'agent-status-msg success';
-      statusEl.textContent = 'Saved.';
-      ADMIN_DROPDOWN_CONFIG[colName] = values;
-      // Refresh any AGENT_EDITABLE_COLUMNS options that mirror this dropdown,
-      // so Add New Lead / Agent Update reflect the change immediately.
-      applyAdminDropdownToForms();
-    } else {
-      statusEl.className = 'agent-status-msg error';
-      statusEl.textContent = data.error || 'Could not save.';
-    }
-  } catch (err) {
-    statusEl.className = 'agent-status-msg error';
-    statusEl.textContent = 'Could not reach the server.';
-    console.error(err);
-  }
-}
-
-// Maps an Admin dropdown-config column name to the matching entry in
-// AGENT_EDITABLE_COLUMNS, so a saved change updates the live forms too.
-var ADMIN_TO_FORM_COLUMN_MAP = {
-  "Lead Source": "LEAD SOURCE",
-  "Type of Connection": "TYPE OF CONNECTION",
-  "Caller Name": "Caller Name",
-  "RM Name": "RM NAME",
-  "Lead Status": "LEAD STATUS"
-};
-
-function applyAdminDropdownToForms() {
-  Object.keys(ADMIN_TO_FORM_COLUMN_MAP).forEach(function (adminCol) {
-    var formHeader = ADMIN_TO_FORM_COLUMN_MAP[adminCol];
-    var col = AGENT_EDITABLE_COLUMNS.filter(function (c) { return c.header === formHeader; })[0];
-    if (col && ADMIN_DROPDOWN_CONFIG[adminCol]) {
-      col.options = ADMIN_DROPDOWN_CONFIG[adminCol];
-    }
-  });
-}
-
-// ---- Allowed emails ----
-var ADMIN_ALLOWED_EMAILS = [];
-
-async function loadAdminEmails() {
-  if (!isCurrentUserAdmin_()) return;
-  var container = document.getElementById('admin-emails-list');
-  container.innerHTML = '<p style="color:var(--grey);font-size:13px;">Loading&hellip;</p>';
-  try {
-    var data = await agentPostToScript({ action: 'get_allowed_emails' });
-    if (!data.success) {
-      container.innerHTML = '<p style="color:var(--red);font-size:13px;">' + (data.error || 'Could not load emails.') + '</p>';
-      return;
-    }
-    ADMIN_ALLOWED_EMAILS = data.emails || [];
-    renderAdminEmailsList();
-  } catch (err) {
-    container.innerHTML = '<p style="color:var(--red);font-size:13px;">Could not reach the server.</p>';
-    console.error(err);
-  }
-}
-
-function renderAdminEmailsList() {
-  var container = document.getElementById('admin-emails-list');
-  if (ADMIN_ALLOWED_EMAILS.length === 0) {
-    container.innerHTML = '<p style="color:var(--grey);font-size:13px;">No emails added yet.</p>';
-    return;
-  }
-  container.innerHTML = ADMIN_ALLOWED_EMAILS.map(function (email, idx) {
-    return (
-      '<div class="admin-email-row">' +
-        '<span>' + email + '</span>' +
-        '<button class="admin-remove-btn" onclick="adminRemoveEmail(' + idx + ')">&times;</button>' +
-      '</div>'
-    );
-  }).join('');
-}
-
-async function adminPersistEmails() {
-  var statusEl = document.getElementById('admin-emails-status');
-  statusEl.className = 'agent-status-msg info';
-  statusEl.textContent = 'Saving\u2026';
-  statusEl.style.display = 'block';
-  try {
-    var data = await agentPostToScript({ action: 'update_allowed_emails', emails: ADMIN_ALLOWED_EMAILS });
-    if (data.success) {
-      statusEl.className = 'agent-status-msg success';
-      statusEl.textContent = 'Saved.';
-    } else {
-      statusEl.className = 'agent-status-msg error';
-      statusEl.textContent = data.error || 'Could not save.';
-    }
-  } catch (err) {
-    statusEl.className = 'agent-status-msg error';
-    statusEl.textContent = 'Could not reach the server.';
-    console.error(err);
-  }
-}
-
-function adminAddEmail() {
-  if (!isCurrentUserAdmin_()) return;
-  var input = document.getElementById('admin-new-email');
-  var email = input.value.trim().toLowerCase();
-  if (!email) return;
-  if (ADMIN_ALLOWED_EMAILS.indexOf(email) !== -1) {
-    var statusEl = document.getElementById('admin-emails-status');
-    statusEl.className = 'agent-status-msg error';
-    statusEl.textContent = 'That email is already on the list.';
-    statusEl.style.display = 'block';
-    return;
-  }
-  ADMIN_ALLOWED_EMAILS.push(email);
-  input.value = '';
-  renderAdminEmailsList();
-  adminPersistEmails();
-}
-
-function adminRemoveEmail(idx) {
-  if (!isCurrentUserAdmin_()) return;
-  ADMIN_ALLOWED_EMAILS.splice(idx, 1);
-  renderAdminEmailsList();
-  adminPersistEmails();
-}
-
-// Load Admin tab data once, the first time it's opened.
-var ADMIN_TAB_LOADED = false;
-var _originalSwitchTab = switchTab;
-switchTab = function (tabId) {
-  _originalSwitchTab(tabId);
-  if (tabId === 'tab-admin' && !ADMIN_TAB_LOADED) {
-    ADMIN_TAB_LOADED = true;
-    loadAdminDropdownConfig();
-    loadAdminEmails();
-  }
-};
 
 // =============================================================================
 // INIT — restore session if already logged in this browser tab
