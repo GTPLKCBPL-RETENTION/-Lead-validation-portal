@@ -228,10 +228,87 @@
     border-radius:4px;
   }
 
+  /* ---- Mail & WhatsApp Activity tab ---- */
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 20px;
+    margin-bottom:20px;
+  }
+  .panel h3{
+    font-size:14px;
+    margin:0 0 6px;
+    color:var(--navy);
+    font-weight:700;
+  }
+  .panel p.note{
+    font-size:12px;
+    color:var(--slate);
+    margin:0 0 14px;
+  }
+  .form-row{
+    display:flex;
+    gap:10px;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .form-group{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .form-group label{
+    font-size:11px;
+    color:var(--slate);
+    font-weight:600;
+  }
+  .form-group input, .form-group textarea{
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:13px;
+    min-width:220px;
+    font-family:inherit;
+  }
+  .form-group textarea{ min-width:320px; resize:vertical; }
+  .btn{
+    background:var(--navy);
+    color:#fff;
+    border:none;
+    padding:9px 18px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .btn:hover{ background:var(--navy-deep); }
+  .btn.whatsapp{ background:#1DA851; }
+  .btn.whatsapp:hover{ background:#178943; }
+  .btn.secondary{
+    background:#fff;
+    border:1px solid var(--line);
+    color:var(--slate);
+  }
+  .lookup-status{
+    font-size:12px;
+    padding:8px 12px;
+    border-radius:8px;
+    margin-bottom:12px;
+    display:none;
+  }
+  .lookup-status.found{ background:var(--green-bg); color:var(--green); display:block; }
+  .lookup-status.notfound{ background:var(--amber-bg); color:var(--amber); display:block; }
+  .lookup-status.error{ background:var(--red-bg); color:var(--red); display:block; }
+  .manual-fields{ display:none; }
+  .manual-fields.show{ display:block; }
+
   @media (max-width:640px){
     header{ padding:16px 18px; flex-direction:column; align-items:flex-start; gap:8px; }
     .tabs{ padding:0 18px; overflow-x:auto; }
     main{ padding:20px 18px 40px; }
+    .form-group input, .form-group textarea{ min-width:0; width:100%; }
   }
 </style>
 </head>
@@ -258,6 +335,7 @@
   <div class="tab active" data-view="tl">TL view</div>
   <div class="tab" data-view="agent">Agent view</div>
   <div class="tab" data-view="mgmtsummary">Management Summary</div>
+  <div class="tab" data-view="activity">Mail & WhatsApp Activity</div>
 </div>
 
 <main>
@@ -358,6 +436,88 @@
 
     </div>
 
+    <!-- MAIL & WHATSAPP ACTIVITY VIEW -->
+    <div class="view" id="view-activity">
+
+      <div class="section-title">Mail Activity <span class="tag">Weekly Non-Contactable drafts</span></div>
+      <div class="panel">
+        <p class="note">
+          Every entry below is logged automatically when the weekly Non-Contactable (LBO No / Wrong Number)
+          Gmail draft is created for a salesperson. This shows draft creation only — it does not confirm the
+          mail was actually sent, since drafts require manual review before sending.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Date</th><th>Sales Name</th><th>TL Name</th>
+              <th class="num">Lead Count</th><th>Month</th><th>Status</th>
+            </tr></thead>
+            <tbody id="mail-log-body">
+              <tr><td colspan="6" style="text-align:center;color:var(--slate-light)">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section-title">Send WhatsApp to Sales <span class="tag">Manual click-to-send</span></div>
+      <div class="panel">
+        <p class="note">
+          Enter a User Id to auto-fill customer details from the sheet. If the User Id isn't found, fill in
+          the fields manually. Edit the Remarks box as needed before sending — it's pre-filled with the
+          sheet's "New Remarks" when available. Clicking "Send via WhatsApp" opens WhatsApp with the message
+          ready; you still need to press Send there.
+        </p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>User Id</label>
+            <input type="text" id="wa-userid-input" placeholder="e.g. lknm_bdcnp">
+          </div>
+          <button class="btn secondary" onclick="lookupUserId()">Look up</button>
+        </div>
+
+        <div id="wa-lookup-status" class="lookup-status"></div>
+
+        <div id="wa-manual-fields" class="manual-fields">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Sales Name</label>
+              <input type="text" id="wa-sales-name">
+            </div>
+            <div class="form-group">
+              <label>Sales WhatsApp Number</label>
+              <input type="text" id="wa-sales-whatsapp" placeholder="10-digit number">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Customer Name</label>
+              <input type="text" id="wa-customer-name">
+            </div>
+            <div class="form-group">
+              <label>Mobile Number</label>
+              <input type="text" id="wa-mobile">
+            </div>
+            <div class="form-group">
+              <label>Partner Code</label>
+              <input type="text" id="wa-partner-code">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label>Remarks</label>
+              <textarea id="wa-remarks" rows="3"></textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <button class="btn whatsapp" onclick="sendWhatsApp()">Send via WhatsApp</button>
+            <button class="btn secondary" onclick="resetWhatsAppForm()">Clear form</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 
 </main>
@@ -367,7 +527,7 @@
    CONFIG — set this to your Apps Script Web App deployment URL
    e.g. "https://script.google.com/macros/s/AKfycb.../exec"
    ========================================================= */
-const API_BASE = "https://script.google.com/macros/s/AKfycbwkKv86PStaKlIOQb589JrxzzbLaIPMJti3ILuRy9doPeBN5MFKcNUUxeVSCrRbxhL0Vw/exec";
+const API_BASE = "https://script.google.com/macros/s/AKfycbwVJkyXiMkUIWda3s5jjHziVY9bcW5UxaM4Tkz7soz8pSmbphvp5eeAr0YS3aY6KJn7zQ/exec";
 
 const POLL_INTERVAL_MS = 60000; // refresh every 60s
 
@@ -526,6 +686,9 @@ document.querySelectorAll(".tab").forEach(tab=>{
     document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
     tab.classList.add("active");
     document.getElementById("view-"+tab.dataset.view).classList.add("active");
+    if(tab.dataset.view === "activity"){
+      loadMailLog();
+    }
   });
 });
 
@@ -705,6 +868,142 @@ async function loadData(){
     errEl.style.display = "block";
     errEl.textContent = "Could not load data: " + err.message;
   }
+}
+
+/* =========================================================
+   MAIL & WHATSAPP ACTIVITY TAB
+   ========================================================= */
+
+async function loadMailLog(){
+  const body = document.getElementById("mail-log-body");
+  body.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--slate-light)">Loading…</td></tr>`;
+  try{
+    const url = API_BASE + (API_BASE.indexOf("?") === -1 ? "?" : "&") + "action=mailLog";
+    const res = await fetch(url, { cache: "no-store" });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    renderMailLog(data.rows || []);
+  }catch(err){
+    body.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--red)">Could not load mail log: ${escapeHtml(err.message)}</td></tr>`;
+  }
+}
+
+function renderMailLog(rows){
+  const body = document.getElementById("mail-log-body");
+  if(!rows.length){
+    body.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--slate-light)">No mail activity logged yet</td></tr>`;
+    return;
+  }
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td>${escapeHtml(formatLogDate(r.date))}</td>
+      <td class="agent-name">${escapeHtml(r.salesName)}</td>
+      <td>${escapeHtml(r.tlName)}</td>
+      <td class="num">${fmtNum(r.leadCount)}</td>
+      <td>${escapeHtml(r.month)}</td>
+      <td><span class="badge good">${escapeHtml(r.status || "Draft Created")}</span></td>
+    </tr>
+  `).join("");
+}
+
+function formatLogDate(iso){
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return iso;
+  return d.toLocaleString("en-IN", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
+}
+
+async function lookupUserId(){
+  const userId = document.getElementById("wa-userid-input").value.trim();
+  const statusEl = document.getElementById("wa-lookup-status");
+  const manualFields = document.getElementById("wa-manual-fields");
+
+  if(!userId){
+    statusEl.className = "lookup-status error";
+    statusEl.textContent = "Enter a User Id first.";
+    return;
+  }
+
+  statusEl.className = "lookup-status found";
+  statusEl.textContent = "Looking up…";
+
+  try{
+    const url = API_BASE + (API_BASE.indexOf("?") === -1 ? "?" : "&") + "action=lookupUser&userId=" + encodeURIComponent(userId);
+    const res = await fetch(url, { cache: "no-store" });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+
+    if(data.found){
+      statusEl.className = "lookup-status found";
+      statusEl.textContent = "Found — fields auto-filled below. Edit Remarks if needed, then send.";
+      document.getElementById("wa-sales-name").value = data.salesName || "";
+      document.getElementById("wa-sales-whatsapp").value = data.salesWhatsApp || "";
+      document.getElementById("wa-customer-name").value = data.customerName || "";
+      document.getElementById("wa-mobile").value = data.phone || "";
+      document.getElementById("wa-partner-code").value = data.partnerCode || "";
+      document.getElementById("wa-remarks").value = data.remarks || "";
+    }else{
+      statusEl.className = "lookup-status notfound";
+      statusEl.textContent = "User Id not found in the sheet — fill in the fields manually below.";
+      resetWhatsAppFieldsOnly();
+    }
+    manualFields.classList.add("show");
+  }catch(err){
+    statusEl.className = "lookup-status error";
+    statusEl.textContent = "Lookup failed: " + err.message + " — you can still fill in the fields manually.";
+    manualFields.classList.add("show");
+  }
+}
+
+function resetWhatsAppFieldsOnly(){
+  document.getElementById("wa-sales-name").value = "";
+  document.getElementById("wa-sales-whatsapp").value = "";
+  document.getElementById("wa-customer-name").value = "";
+  document.getElementById("wa-mobile").value = "";
+  document.getElementById("wa-partner-code").value = "";
+  document.getElementById("wa-remarks").value = "";
+}
+
+function resetWhatsAppForm(){
+  document.getElementById("wa-userid-input").value = "";
+  document.getElementById("wa-lookup-status").style.display = "none";
+  document.getElementById("wa-manual-fields").classList.remove("show");
+  resetWhatsAppFieldsOnly();
+}
+
+function sendWhatsApp(){
+  const salesName = document.getElementById("wa-sales-name").value.trim();
+  const salesWhatsApp = document.getElementById("wa-sales-whatsapp").value.trim().replace(/\D/g, "");
+  const userId = document.getElementById("wa-userid-input").value.trim();
+  const customerName = document.getElementById("wa-customer-name").value.trim();
+  const mobile = document.getElementById("wa-mobile").value.trim();
+  const partnerCode = document.getElementById("wa-partner-code").value.trim();
+  const remarks = document.getElementById("wa-remarks").value.trim();
+
+  if(!salesWhatsApp){
+    alert("Sales WhatsApp Number is required to send.");
+    return;
+  }
+
+  const messageLines = [
+    `Hi ${salesName || "Sales"},`,
+    "",
+    "Department: Retention",
+    `Customer: ${customerName || "-"}`,
+    `User ID: ${userId || "-"}`,
+    `Partner Code: ${partnerCode || "-"}`,
+    `Mobile: ${mobile || "-"}`,
+    `Remarks: ${remarks || "-"}`,
+    "",
+    "Please follow up.",
+    "- Retention Team"
+  ];
+  const message = messageLines.join("\n");
+
+  // Indian mobile numbers: prefix country code 91 if a bare 10-digit
+  // number was stored in the sheet.
+  const waNumber = salesWhatsApp.length === 10 ? "91" + salesWhatsApp : salesWhatsApp;
+  const waUrl = "https://wa.me/" + waNumber + "?text=" + encodeURIComponent(message);
+  window.open(waUrl, "_blank");
 }
 
 loadData();
